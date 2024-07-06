@@ -19,13 +19,13 @@ class Bishop(Piece):
         for i in range(1, 8):
             if not (self.i + i < 8 and self.j - i >= 0):
                 break
-            output.append(Bishop((self.i - i, self.j - i), self.colour))
+            output.append(Bishop((self.i + i, self.j - i), self.colour))
 
         # TO TOP RIGHT
         for i in range(1, 8):
             if not (self.i - i >= 0 and self.j + i < 8):
                 break
-            output.append(Bishop((self.i - i, self.j - i), self.colour))
+            output.append(Bishop((self.i - i, self.j + i), self.colour))
 
         # TO TOP LEFT
         for i in range(1, 8):

@@ -21,13 +21,11 @@ def main(version: int = 0):
     clock = pg.time.Clock()
     gs = Gamestate()
     selected_piece = None
-    print(Pawn((6, 1), BLACK).generate_possible_moves())
+    gs.draw_board(WINDOW)
+    pg.display.update()
 
     while run:
         clock.tick(FPS)
-
-        gs.draw_board(WINDOW)
-        pg.display.update()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False
@@ -38,9 +36,15 @@ def main(version: int = 0):
                 j = pos[0] // SQUAREWIDTH
                 if not selected_piece:
                     selected_piece = gs.get_piece(i, j)
+                    generated_moves = selected_piece.generate_possible_moves()
+                    for move in generated_moves:
+                        pg.draw.circle(WINDOW, BLACK, ((move.j + 0.5)*SQUAREWIDTH, (move.i + 0.5)*SQUAREWIDTH), 0.1*SQUAREWIDTH)
+                        pg.display.update()
                 else:
                     selected_piece.i = i
                     selected_piece.j = j
+                    gs.draw_board(WINDOW)
+                    pg.display.update()
                     selected_piece = None
                     gs.move += 1
 
