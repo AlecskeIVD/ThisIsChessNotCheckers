@@ -9,19 +9,24 @@ from pieces.queen import Queen
 
 
 class Gamestate:
-    def __init__(self):
-        white_pieces = [Rook(BP_WLROOK, WHITE), Rook(BP_WRROOK, WHITE), Knight(BP_WLKNIGHT, WHITE),
+    def __init__(self, white_pieces=None, black_pieces=None, move=1):
+        if black_pieces is None:
+            black_pieces = []
+        if white_pieces is None:
+            white_pieces = []
+        if not white_pieces:
+            white_pieces = [Rook(BP_WLROOK, WHITE), Rook(BP_WRROOK, WHITE), Knight(BP_WLKNIGHT, WHITE),
                         Knight(BP_WRKNIGHT, WHITE), Bishop(BP_WLBISHOP, WHITE), Bishop(BP_WRBISHOP, WHITE),
                         Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE)]
-        for i in range(COLUMNS):
-            white_pieces.append(Pawn((ROWS - 2, i), WHITE))
+            for i in range(COLUMNS):
+                white_pieces.append(Pawn((ROWS - 2, i), WHITE))
         self.white_pieces = white_pieces
-
-        black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK), Knight(BP_BLKNIGHT, BLACK),
+        if not black_pieces:
+            black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK), Knight(BP_BLKNIGHT, BLACK),
                         Knight(BP_BRKNIGHT, BLACK), Bishop(BP_BLBISHOP, BLACK), Bishop(BP_BRBISHOP, BLACK),
                         Queen(BP_BQUEEN, BLACK), King(BP_BKING, BLACK)]
-        for i in range(COLUMNS):
-            black_pieces.append(Pawn((1, i), BLACK))
+            for i in range(COLUMNS):
+                black_pieces.append(Pawn((1, i), BLACK))
         self.black_pieces = black_pieces
 
         # LOAD IMAGES
@@ -34,7 +39,48 @@ class Gamestate:
             # pg.image.save(white_image, "assets/images/" + piece + "_white.png")
             self.images[f"{piece}_white"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_white.png"),
                                                                (SQUAREWIDTH, SQUAREWIDTH))
-        self.move = 1
+        self.move = move
+
+    def get_piece(self, i, j):
+        for piece in self.white_pieces:
+            if piece.i == i and piece.j == j:
+                return piece
+        for piece in self.black_pieces:
+            if piece.i == i and piece.j == j:
+                return piece
+        return None
+
+    def white_wins(self):
+        if self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and self.king_under_attack(BLACK):
+            return True
+        return False
+
+    def legal_moves(self, colour):
+        output = []
+        for move in self.generate_all_moves(colour):
+            if self.is_legal(move):
+                output.append(move)
+        return output
+
+    def king_under_attack(self, colour):
+        return colour == BLACK and self.move % 2 == 1  # FIX LATER
+
+    def is_legal(self, new_board):
+        return (self.move % 2 == 0 or self.move % 2 == 1) and not new_board # FIX LATER
+
+    def generate_all_moves(self, colour):
+        output = []
+        if colour == WHITE:
+            for piece in self.white_pieces:
+                for new_possible_piece in piece.generate_possible_moves():
+                    new_gs = Gamestate([wp for wp in self.white_pieces if wp != piece] + [new_possible_piece], self.black_pieces.copy(), self.move+1)
+                    output.append(new_gs)
+        elif colour == BLACK:
+            for piece in self.black_pieces:
+                for new_possible_piece in piece.generate_possible_moves():
+                    new_gs = Gamestate(self.white_pieces.copy(), [bp for bp in self.black_pieces if bp != piece] + [new_possible_piece], self.move+1)
+                    output.append(new_gs)
+        return output
 
     def draw_board(self, window):
         # Draw Board
