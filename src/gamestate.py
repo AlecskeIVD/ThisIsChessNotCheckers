@@ -55,6 +55,11 @@ class Gamestate:
             return True
         return False
 
+    def black_wins(self):
+        if self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and self.king_under_attack(WHITE):
+            return True
+        return False
+
     def legal_moves(self, colour) -> list['Gamestate']:
         """
 A function that returns ALL possible valid gamestates after colour makes a move
@@ -266,19 +271,19 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                 if moved_piece_old.j == moved_piece_new.j:
                     # if it moved forward, there can be no piece of either colour in front
                     if moved_piece_new.i == moved_piece_old.i-1:
-                        for piece in new_board.white_pieces:
+                        for piece in self.white_pieces:
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
-                        for piece in new_board.black_pieces:
+                        for piece in self.black_pieces:
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
                         return True
                     elif moved_piece_new.i == moved_piece_old.i-2 and moved_piece_old.i == 6:
                         # First move of the pawn, so it's allowed to move two positions up if there's nothing in between
-                        for piece in new_board.white_pieces:
+                        for piece in self.white_pieces:
                             if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i+1) and piece.j == moved_piece_new.j:
                                 return False
-                        for piece in new_board.black_pieces:
+                        for piece in self.black_pieces:
                             if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i+1) and piece.j == moved_piece_new.j:
                                 return False
                         moved_piece_new.en_passantable = True
@@ -302,19 +307,19 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                 if moved_piece_old.j == moved_piece_new.j:
                     # if it moved forward, there can be no piece of either colour in front
                     if moved_piece_new.i == moved_piece_old.i + 1:
-                        for piece in new_board.white_pieces:
+                        for piece in self.white_pieces:
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
-                        for piece in new_board.black_pieces:
+                        for piece in self.black_pieces:
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
                         return True
                     elif moved_piece_new.i == moved_piece_old.i + 2 and moved_piece_old.i == 1:
                         # First move of the pawn, so it's allowed to move two positions up if there's nothing in between
-                        for piece in new_board.white_pieces:
+                        for piece in self.white_pieces:
                             if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
                                 return False
-                        for piece in new_board.black_pieces:
+                        for piece in self.black_pieces:
                             if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
                                 return False
                         moved_piece_new.en_passantable = True

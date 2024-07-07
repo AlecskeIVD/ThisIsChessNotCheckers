@@ -20,13 +20,15 @@ pg.display.set_caption("Chess")
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate([King((0, 0), WHITE)], [King((5, 5), BLACK)])
+    # gs = Gamestate([Pawn((6, 0), WHITE), King((7, 0), WHITE)], [King((5, 5), BLACK)])
+    gs = Gamestate()
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
 
     while run:
         clock.tick(FPS)
+        print(gs.move)
         if gs.move % 2 == 1:
             lm = gs.legal_moves(WHITE)
         else:
@@ -35,10 +37,17 @@ def main(version: int = 0):
         gs.update(newmove)
         gs.draw_board(WINDOW)
         pg.display.update()
+        if gs.white_wins():
+            run = False
+            print("White has won!")
+        elif gs.black_wins():
+            run = False
+            print("Black has won")
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False
-
+    pg.quit()
+"""
             if event.type == pg.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 i = pos[1] // SQUAREWIDTH
@@ -59,6 +68,7 @@ def main(version: int = 0):
                     gs.move += 1
 
     pg.quit()
+"""
 
 
 if __name__ == '__main__':
