@@ -490,6 +490,54 @@ A function that returns ALL possible gamestates after colour makes a move
                     output.append(new_gs)
         return output
 
+    def update(self, target_gamestate: 'Gamestate'):
+        """
+Updates this gamestate to make the move to 'transform to target_gamestate', while incrementing move counter, removing captured elements and
+restoring en-passantable values for pawns of colour that just made move
+        :param target_gamestate: desired gamestate
+        """
+        if not self.is_legal(target_gamestate):
+            raise Exception
+        moved_piece_old = None
+        moved_piece_new = None
+        for piece in self.white_pieces:
+            if piece not in target_gamestate.white_pieces:
+                moved_piece_old = piece
+        for piece in self.black_pieces:
+            if piece not in target_gamestate.black_pieces:
+                moved_piece_old = piece
+
+        for piece in target_gamestate.white_pieces:
+            if piece not in self.white_pieces:
+                moved_piece_new = piece
+        for piece in target_gamestate.black_pieces:
+            if piece not in self.black_pieces:
+                moved_piece_new = piece
+        if moved_piece_new.colour == BLACK:
+            self.black_pieces = [piece for piece in self.black_pieces if piece != moved_piece_old] + [moved_piece_new]
+            # Remove white piece if it's captured
+            self.white_pieces = [piece for piece in self.white_pieces if
+                                 piece.i != moved_piece_new.i and piece.j != moved_piece_new.j]
+            for piece in self.white_pieces[:]:
+                if piece.value == PAWN:
+                    # CHECK IF IT GOT EN-PASSANTED
+                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i+1 and moved_piece_new.j == piece.j:
+                        self.white_pieces.remove(piece)
+                    else:
+                        piece.en_passantable = False
+        else:
+            self.white_pieces = [piece for piece in self.white_pieces if piece != moved_piece_old] + [moved_piece_new]
+            # Remove black piece if it's captured
+            self.black_pieces = [piece for piece in self.black_pieces if
+                                 piece.i != moved_piece_new.i and piece.j != moved_piece_new.j]
+            for piece in self.black_pieces[:]:
+                if piece.value == PAWN:
+                    # CHECK IF IT GOT EN-PASSANTED
+                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i-1 and moved_piece_new.j == piece.j:
+                        self.black_pieces.remove(piece)
+                    else:
+                        piece.en_passantable = False
+
     def draw_board(self, window):
         # Draw Board
         window.fill(GREEN)

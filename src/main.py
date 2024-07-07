@@ -23,6 +23,7 @@ def main(version: int = 0):
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
+    print(gs.king_under_attack(WHITE))
 
     while run:
         clock.tick(FPS)
@@ -46,6 +47,7 @@ def main(version: int = 0):
                     gs.draw_board(WINDOW)
                     pg.display.update()
                     selected_piece = None
+                    print(gs.king_under_attack(WHITE))
                     gs.move += 1
 
     pg.quit()
