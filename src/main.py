@@ -1,6 +1,5 @@
 import pygame as pg
-import pygame.mouse
-
+import time
 from assets.constants import *
 from pieces.rook import Rook
 from pieces.pawn import Pawn
@@ -20,8 +19,8 @@ pg.display.set_caption("Chess")
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    # gs = Gamestate([Pawn((6, 0), WHITE), King((7, 0), WHITE)], [King((5, 5), BLACK)])
-    gs = Gamestate()
+    gs = Gamestate( [Pawn((6, i), WHITE) for i in range(7)] + [Queen((7, 1), WHITE), King((7, 2), WHITE)], [King((5, 5), BLACK)])
+    # gs = Gamestate()
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
@@ -43,9 +42,13 @@ def main(version: int = 0):
         elif gs.black_wins():
             run = False
             print("Black has won")
+        elif gs.stalemate():
+            run = False
+            print("Stalemate; no more legal moves")
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False
+    time.sleep(5)
     pg.quit()
 """
             if event.type == pg.MOUSEBUTTONDOWN:

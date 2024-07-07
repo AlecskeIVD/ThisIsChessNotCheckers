@@ -60,6 +60,10 @@ class Gamestate:
             return True
         return False
 
+    def stalemate(self):
+        return (self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
+               (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK))
+
     def legal_moves(self, colour) -> list['Gamestate']:
         """
 A function that returns ALL possible valid gamestates after colour makes a move
@@ -69,6 +73,7 @@ A function that returns ALL possible valid gamestates after colour makes a move
         output = []
         for move in self.generate_all_moves(colour):
             if self.is_legal(move):
+                # print(f"{move.white_pieces[-1].value} is able to move to ({move.white_pieces[-1].i},{move.white_pieces[-1].j})")
                 output.append(move)
         return output
 
@@ -522,7 +527,7 @@ restoring en-passantable values for pawns of colour that just made move
             self.black_pieces = [piece for piece in self.black_pieces if piece != moved_piece_old] + [moved_piece_new]
             # Remove white piece if it's captured
             self.white_pieces = [piece for piece in self.white_pieces if
-                                 piece.i != moved_piece_new.i and piece.j != moved_piece_new.j]
+                                 piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
             for piece in self.white_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
@@ -534,7 +539,7 @@ restoring en-passantable values for pawns of colour that just made move
             self.white_pieces = [piece for piece in self.white_pieces if piece != moved_piece_old] + [moved_piece_new]
             # Remove black piece if it's captured
             self.black_pieces = [piece for piece in self.black_pieces if
-                                 piece.i != moved_piece_new.i and piece.j != moved_piece_new.j]
+                                 piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
             for piece in self.black_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
