@@ -537,6 +537,7 @@ restoring en-passantable values for pawns of colour that just made move
                         self.black_pieces.remove(piece)
                     else:
                         piece.en_passantable = False
+        self.move += 1
 
     def draw_board(self, window):
         # Draw Board
