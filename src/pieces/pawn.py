@@ -6,6 +6,7 @@ from .queen import Queen
 class Pawn(Piece):
     def __init__(self, position: (int, int), colour: (int, int, int)):
         super().__init__(position, colour, PAWN)
+        self.en_passantable = False
 
     def generate_possible_moves(self):
         output = []
