@@ -9,6 +9,7 @@ from pieces.king import King
 from pieces.knight import Knight
 from pieces.queen import Queen
 from src.gamestate import Gamestate
+from random import randint
 
 
 # INITIALISING WINDOW
@@ -19,14 +20,21 @@ pg.display.set_caption("Chess")
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate()
+    gs = Gamestate([King((0, 0), WHITE)], [King((5, 5), BLACK)])
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
-    print(gs.king_under_attack(WHITE))
 
     while run:
         clock.tick(FPS)
+        if gs.move % 2 == 1:
+            lm = gs.legal_moves(WHITE)
+        else:
+            lm = gs.legal_moves(BLACK)
+        newmove = lm[randint(0, len(lm)-1)]
+        gs.update(newmove)
+        gs.draw_board(WINDOW)
+        pg.display.update()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False

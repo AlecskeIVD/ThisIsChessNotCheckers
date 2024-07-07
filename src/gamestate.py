@@ -171,7 +171,7 @@ Checks if the king of team 'colour' is in check
             elif piece is not None:
                 blocking_piece_found = True
             else:
-                index_tr += 1
+                index_tl += 1
         piece_top_left = self.get_piece(king.i - 1, king.j - 1)
         piece_top_right = self.get_piece(king.i - 1, king.j + 1)
         piece_bottom_left = self.get_piece(king.i + 1, king.j - 1)
