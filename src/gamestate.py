@@ -34,12 +34,14 @@ class Gamestate:
             pieces = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
             self.images = {}
             for piece in pieces:
-                self.images[f"{piece}_black"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_black.png"),
-                                                                   (SQUAREWIDTH, SQUAREWIDTH))
+                self.images[f"{piece}_black"] = pg.transform.scale(
+                    pg.image.load("assets/images/" + piece + "_black.png"),
+                    (SQUAREWIDTH, SQUAREWIDTH))
                 # white_image = convert_black_to_white(self.images.get(f"{piece}_black"))
                 # pg.image.save(white_image, "assets/images/" + piece + "_white.png")
-                self.images[f"{piece}_white"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_white.png"),
-                                                                   (SQUAREWIDTH, SQUAREWIDTH))
+                self.images[f"{piece}_white"] = pg.transform.scale(
+                    pg.image.load("assets/images/" + piece + "_white.png"),
+                    (SQUAREWIDTH, SQUAREWIDTH))
         self.move = move
 
     def get_piece(self, i, j):
@@ -94,8 +96,8 @@ Checks if the king of team 'colour' is in check
             raise Exception
         # Check if a rook or queen can attack king from horizontal line
         blocking_piece_found = False
-        horizontal_index_left = king.j-1
-        horizontal_index_right = king.j+1
+        horizontal_index_left = king.j - 1
+        horizontal_index_right = king.j + 1
         while horizontal_index_left >= 0 and not blocking_piece_found:
             piece = self.get_piece(king.i, horizontal_index_left)
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
@@ -145,7 +147,7 @@ Checks if the king of team 'colour' is in check
 
         # Bottom right
         while king.i + index_br < 8 and king.j + index_br < 8 and not blocking_piece_found:
-            piece = self.get_piece(king.i+index_br, king.j+index_br)
+            piece = self.get_piece(king.i + index_br, king.j + index_br)
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 return True
             elif piece is not None:
@@ -155,7 +157,7 @@ Checks if the king of team 'colour' is in check
         blocking_piece_found = False
         # Bottom left
         while king.i + index_bl < 8 and king.j - index_bl >= 0 and not blocking_piece_found:
-            piece = self.get_piece(king.i+index_bl, king.j-index_bl)
+            piece = self.get_piece(king.i + index_bl, king.j - index_bl)
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 return True
             elif piece is not None:
@@ -165,7 +167,7 @@ Checks if the king of team 'colour' is in check
         blocking_piece_found = False
         # Top right
         while king.i - index_tr >= 0 and king.j + index_tr < 8 and not blocking_piece_found:
-            piece = self.get_piece(king.i-index_tr, king.j+index_tr)
+            piece = self.get_piece(king.i - index_tr, king.j + index_tr)
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 return True
             elif piece is not None:
@@ -187,20 +189,27 @@ Checks if the king of team 'colour' is in check
         piece_bottom_left = self.get_piece(king.i + 1, king.j - 1)
         piece_bottom_right = self.get_piece(king.i + 1, king.j + 1)
         # Check if a pawn can attack king
-        if (king.colour == WHITE and ((piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN) or (piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN))) or (king.colour == BLACK and ((piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN) or (piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN))):
+        if (king.colour == WHITE and (
+                (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN) or (
+                piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN))) or (
+                king.colour == BLACK and ((
+                                                  piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN) or (
+                                                  piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN))):
             return True
 
         # Check if a knight can attack king
         if colour == WHITE:
             for piece in self.black_pieces:
-                if piece.value == KNIGHT and ((abs(piece.i-king.i) == 2 and abs(piece.j-king.j) == 1) or (abs(piece.i-king.i) == 1 and abs(piece.j-king.j) == 2)):
+                if piece.value == KNIGHT and ((abs(piece.i - king.i) == 2 and abs(piece.j - king.j) == 1) or (
+                        abs(piece.i - king.i) == 1 and abs(piece.j - king.j) == 2)):
                     return True
         else:
             for piece in self.white_pieces:
-                if piece.value == KNIGHT and ((abs(piece.i-king.i) == 2 and abs(piece.j-king.j) == 1) or (abs(piece.i-king.i) == 1 and abs(piece.j-king.j) == 2)):
+                if piece.value == KNIGHT and ((abs(piece.i - king.i) == 2 and abs(piece.j - king.j) == 1) or (
+                        abs(piece.i - king.i) == 1 and abs(piece.j - king.j) == 2)):
                     return True
 
-        # Check if other king can attack knight
+        # Check if other king can attack king
         if colour == WHITE:
             for piece in self.black_pieces:
                 if piece.value == KING and (abs(piece.i - king.i) <= 1 and abs(piece.j - king.j) <= 1):
@@ -265,8 +274,12 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         if count != 1:
             return False
 
-        # Check if king is capturable after move made
-        if new_board.king_under_attack(moved_piece_old.colour):
+        # Check if king is capturable after move made (or attempt to castle, which needs different kind of check)
+        if new_board.king_under_attack(moved_piece_old.colour) and not (moved_piece_old.value == KING and not
+                                                                        self.king_under_attack(moved_piece_old.colour)
+                                                                        and moved_piece_old.i == moved_piece_new.i and
+                                                                        abs(moved_piece_old.j - moved_piece_new.j) == 2
+                                                                        and not moved_piece_old.has_moved):
             return False
 
         if moved_piece_old.value == PAWN:
@@ -275,7 +288,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                 # WHITE PAWNS MOVE UP, SO DECREASING I VALUE
                 if moved_piece_old.j == moved_piece_new.j:
                     # if it moved forward, there can be no piece of either colour in front
-                    if moved_piece_new.i == moved_piece_old.i-1:
+                    if moved_piece_new.i == moved_piece_old.i - 1:
                         for piece in self.white_pieces:
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
@@ -283,23 +296,27 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                             if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
                                 return False
                         return True
-                    elif moved_piece_new.i == moved_piece_old.i-2 and moved_piece_old.i == 6:
+                    elif moved_piece_new.i == moved_piece_old.i - 2 and moved_piece_old.i == 6:
                         # First move of the pawn, so it's allowed to move two positions up if there's nothing in between
                         for piece in self.white_pieces:
-                            if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i+1) and piece.j == moved_piece_new.j:
+                            if (
+                                    piece.i == moved_piece_new.i or piece.i == moved_piece_new.i + 1) and piece.j == moved_piece_new.j:
                                 return False
                         for piece in self.black_pieces:
-                            if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i+1) and piece.j == moved_piece_new.j:
+                            if (
+                                    piece.i == moved_piece_new.i or piece.i == moved_piece_new.i + 1) and piece.j == moved_piece_new.j:
                                 return False
                         moved_piece_new.en_passantable = True
                         return True
                     else:
                         # Moved up (or down) too many spaces
                         return False
-                elif (moved_piece_old.j == moved_piece_new.j + 1 or moved_piece_old.j == moved_piece_new.j - 1) and moved_piece_new.i == moved_piece_old.i-1:
+                elif (
+                        moved_piece_old.j == moved_piece_new.j + 1 or moved_piece_old.j == moved_piece_new.j - 1) and moved_piece_new.i == moved_piece_old.i - 1:
                     # Moved diagonally to capture something
                     for piece in new_board.black_pieces:
-                        if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == PAWN and piece.en_passantable and piece.i == moved_piece_new.i+1 and piece.j == moved_piece_new.j):
+                        if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (
+                                piece.value == PAWN and piece.en_passantable and piece.i == moved_piece_new.i + 1 and piece.j == moved_piece_new.j):
                             return True
 
                     # No capturable piece on this spot
@@ -322,20 +339,24 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                     elif moved_piece_new.i == moved_piece_old.i + 2 and moved_piece_old.i == 1:
                         # First move of the pawn, so it's allowed to move two positions up if there's nothing in between
                         for piece in self.white_pieces:
-                            if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
+                            if (
+                                    piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
                                 return False
                         for piece in self.black_pieces:
-                            if (piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
+                            if (
+                                    piece.i == moved_piece_new.i or piece.i == moved_piece_new.i - 1) and piece.j == moved_piece_new.j:
                                 return False
                         moved_piece_new.en_passantable = True
                         return True
                     else:
                         # Moved up (or down) too many spaces
                         return False
-                elif (moved_piece_old.j == moved_piece_new.j + 1 or moved_piece_old.j == moved_piece_new.j - 1) and moved_piece_new.i == moved_piece_old.i + 1:
+                elif (
+                        moved_piece_old.j == moved_piece_new.j + 1 or moved_piece_old.j == moved_piece_new.j - 1) and moved_piece_new.i == moved_piece_old.i + 1:
                     # Moved diagonally to capture something
                     for piece in new_board.white_pieces:
-                        if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == PAWN and piece.en_passantable and piece.i == moved_piece_new.i-1 and piece.j == moved_piece_new.j):
+                        if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (
+                                piece.value == PAWN and piece.en_passantable and piece.i == moved_piece_new.i - 1 and piece.j == moved_piece_new.j):
                             return True
 
                     # No capturable piece on this spot
@@ -346,14 +367,14 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         elif moved_piece_old.value == BISHOP:
             # CHECK IF LEGAL BISHOP MOVE
             # Check if it was moved in a straight diagonal line
-            if not (abs(moved_piece_old.i-moved_piece_new.i) == abs(moved_piece_old.j-moved_piece_new.j)):
+            if not (abs(moved_piece_old.i - moved_piece_new.i) == abs(moved_piece_old.j - moved_piece_new.j)):
                 return False
 
             # Check if there were no positions occupied by other pieces between old and new position
             if moved_piece_old.i < moved_piece_new.i and moved_piece_old.j < moved_piece_new.j:
                 # Went to bottom right
-                for n in range(1, moved_piece_new.i-moved_piece_old.i):
-                    if self.get_piece(moved_piece_old.i+n, moved_piece_old.j+n) is not None:
+                for n in range(1, moved_piece_new.i - moved_piece_old.i):
+                    if self.get_piece(moved_piece_old.i + n, moved_piece_old.j + n) is not None:
                         return False
                 return True
             elif moved_piece_old.i < moved_piece_new.i and moved_piece_old.j > moved_piece_new.j:
@@ -384,32 +405,33 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
             # Check if there were no positions occupied by other pieces between old and new position
             if moved_piece_old.j < moved_piece_new.j:
                 # Went to right
-                for n in range(1, moved_piece_new.j-moved_piece_old.j):
+                for n in range(1, moved_piece_new.j - moved_piece_old.j):
                     if self.get_piece(moved_piece_old.i, moved_piece_old.j + n) is not None:
                         return False
                 return True
             elif moved_piece_old.j > moved_piece_new.j:
                 # Went to left
-                for n in range(1, moved_piece_old.j-moved_piece_new.j):
+                for n in range(1, moved_piece_old.j - moved_piece_new.j):
                     if self.get_piece(moved_piece_old.i, moved_piece_old.j - n) is not None:
                         return False
                 return True
             elif moved_piece_old.i < moved_piece_new.i:
                 for n in range(1, moved_piece_new.i - moved_piece_old.i):
-                    if self.get_piece(moved_piece_old.i+n, moved_piece_old.j) is not None:
+                    if self.get_piece(moved_piece_old.i + n, moved_piece_old.j) is not None:
                         return False
                 return True
             else:
                 # Went to top
                 for n in range(1, moved_piece_old.i - moved_piece_new.i):
-                    if self.get_piece(moved_piece_old.i-n, moved_piece_old.j) is not None:
+                    if self.get_piece(moved_piece_old.i - n, moved_piece_old.j) is not None:
                         return False
                 return True
 
         elif moved_piece_old.value == KNIGHT:
             # CHECK IF LEGAL KNIGHT MOVE
-            return (abs(moved_piece_old.i-moved_piece_new.i) == 2 and abs(moved_piece_old.j-moved_piece_new.j) == 1) or\
-                   (abs(moved_piece_old.i-moved_piece_new.i) == 1 and abs(moved_piece_old.j-moved_piece_new.j) == 2)
+            return (abs(moved_piece_old.i - moved_piece_new.i) == 2 and abs(
+                moved_piece_old.j - moved_piece_new.j) == 1) or \
+                   (abs(moved_piece_old.i - moved_piece_new.i) == 1 and abs(moved_piece_old.j - moved_piece_new.j) == 2)
 
         elif moved_piece_old.value == QUEEN:
             # CHECK IF LEGAL QUEEN MOVE
@@ -474,7 +496,98 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
 
         elif moved_piece_old.value == KING:
             # CHECK IF LEGAL KING MOVE
-            return abs(moved_piece_old.i-moved_piece_new.i) <= 1 and abs(moved_piece_old.j-moved_piece_new.j) <= 1
+            if abs(moved_piece_old.i - moved_piece_new.i) <= 1 and abs(moved_piece_old.j - moved_piece_new.j) <= 1:
+                return True
+
+            # CHECK IF CASTLED
+            if self.king_under_attack(moved_piece_old.colour):
+                return False
+            if moved_piece_old.i == moved_piece_new.i and abs(moved_piece_old.j - moved_piece_new.j) == 2 and \
+                    not moved_piece_old.has_moved:
+                if moved_piece_old.j > moved_piece_new.j:
+                    # WENT TO THE LEFT
+                    # CHECK IF THE NEXT PIECE IN LEFT DIRECTION IS AN UNMOVED ROOK
+                    index = moved_piece_old.j
+                    while index > 1:
+                        index -= 1
+                        if self.get_piece(moved_piece_old.i, index) is not None:
+                            return False
+                    # No blocking piece found
+                    possible_rook = self.get_piece(moved_piece_old.i, 0)
+                    if possible_rook is None or possible_rook.value != ROOK or possible_rook.colour != moved_piece_old.colour or possible_rook.has_moved:
+                        return False
+                    # CHECK IF KING IS SAFE AFTER MOVING ROOK
+                    correct_gs = Gamestate([piece for piece in new_board.white_pieces if piece != possible_rook] + [
+                            Rook((possible_rook.i, moved_piece_new.j+1), WHITE, True) for _ in range(1) if
+                            moved_piece_old.colour == WHITE], [piece for piece in new_board.black_pieces if piece != possible_rook] + [
+                            Rook((possible_rook.i, moved_piece_new.j+1), BLACK, True) for _ in range(1) if
+                            moved_piece_old.colour == BLACK])
+                    if correct_gs.king_under_attack(moved_piece_old.colour):
+                        return False
+
+                    # CHECK IF 2 SQUARES ARE NOT ATTACKABLE
+
+                    check_gs_1 = Gamestate([piece for piece in self.white_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j - 1), WHITE, True) for i in range(1) if
+                            moved_piece_old.colour == WHITE],
+                        [piece for piece in self.black_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j - 1), BLACK, True) for i in range(1) if
+                            moved_piece_old.colour == BLACK])
+
+                    check_gs_2 = Gamestate(
+                        [piece for piece in self.white_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j - 2), WHITE, True) for _ in range(1) if
+                            moved_piece_old.colour == WHITE],
+                        [piece for piece in self.black_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j - 2), BLACK, True) for _ in range(1) if
+                            moved_piece_old.colour == BLACK])
+
+                    return not check_gs_1.king_under_attack(moved_piece_old.colour) and not \
+                        check_gs_2.king_under_attack(moved_piece_old.colour)
+                else:
+                    # WENT TO THE RIGHT
+                    index = moved_piece_old.j
+                    while index < 6:
+                        index += 1
+                        if self.get_piece(moved_piece_old.i, index) is not None:
+                            return False
+                    # No blocking piece found
+                    possible_rook = self.get_piece(moved_piece_old.i, 7)
+                    if possible_rook is None or possible_rook.value != ROOK or possible_rook.colour != moved_piece_old.colour or possible_rook.has_moved:
+                        return False
+                    # CHECK IF KING IS SAFE AFTER MOVING ROOK
+                    correct_gs = Gamestate([piece for piece in new_board.white_pieces if piece != possible_rook] + [
+                        Rook((possible_rook.i, moved_piece_new.j - 1), WHITE, True) for _ in range(1) if
+                        moved_piece_old.colour == WHITE],
+                                           [piece for piece in new_board.black_pieces if piece != possible_rook] + [
+                                               Rook((possible_rook.i, moved_piece_new.j - 1), BLACK, True) for _ in
+                                               range(1) if
+                                               moved_piece_old.colour == BLACK])
+                    if correct_gs.king_under_attack(moved_piece_old.colour):
+                        return False
+
+                    # CHECK IF 2 SQUARES ARE NOT ATTACKABLE
+
+                    check_gs_1 = Gamestate([piece for piece in self.white_pieces if piece != moved_piece_old] + [
+                        King((moved_piece_old.i, moved_piece_old.j + 1), WHITE, True) for i in range(1) if
+                        moved_piece_old.colour == WHITE],
+                                           [piece for piece in self.black_pieces if piece != moved_piece_old] + [
+                                               King((moved_piece_old.i, moved_piece_old.j + 1), BLACK, True) for i in
+                                               range(1) if
+                                               moved_piece_old.colour == BLACK])
+
+                    check_gs_2 = Gamestate(
+                        [piece for piece in self.white_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j + 2), WHITE, True) for _ in range(1) if
+                            moved_piece_old.colour == WHITE],
+                        [piece for piece in self.black_pieces if piece != moved_piece_old] + [
+                            King((moved_piece_old.i, moved_piece_old.j + 2), BLACK, True) for _ in range(1) if
+                            moved_piece_old.colour == BLACK])
+
+                    return not check_gs_1.king_under_attack(moved_piece_old.colour) and not \
+                        check_gs_2.king_under_attack(moved_piece_old.colour)
+            return False
+
         # NO LEGAL VALUE
         return False
 
@@ -502,8 +615,8 @@ A function that returns ALL possible gamestates after colour makes a move
 
     def update(self, target_gamestate: 'Gamestate'):
         """
-Updates this gamestate to make the move to 'transform to target_gamestate', while incrementing move counter, removing captured elements and
-restoring en-passantable values for pawns of colour that just made move
+Updates this gamestate to make the move to 'transform to target_gamestate', while incrementing move counter,
+removing captured elements and restoring en-passantable values for pawns of colour that just made move
         :param target_gamestate: desired gamestate
         """
         if not self.is_legal(target_gamestate):
@@ -525,25 +638,45 @@ restoring en-passantable values for pawns of colour that just made move
                 moved_piece_new = piece
         if moved_piece_new.colour == BLACK:
             self.black_pieces = [piece for piece in self.black_pieces if piece != moved_piece_old] + [moved_piece_new]
+            if moved_piece_old.value == KING and abs(moved_piece_new.j-moved_piece_old.j) == 2:
+                # Castle, so we have to update rook that castled
+                if moved_piece_new.j > moved_piece_old.j:
+                    # MOVED TO RIGHT
+                    self.black_pieces.remove(Rook((0, 7), BLACK, False))
+                    self.black_pieces.append(Rook((0, moved_piece_new.j-1), BLACK, True))
+                else:
+                    # MOVED TO LEFT
+                    self.black_pieces.remove(Rook((0, 0), BLACK, False))
+                    self.black_pieces.append(Rook((0, moved_piece_new.j + 1), BLACK, True))
             # Remove white piece if it's captured
             self.white_pieces = [piece for piece in self.white_pieces if
                                  piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
             for piece in self.white_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
-                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i+1 and moved_piece_new.j == piece.j:
+                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i + 1 and moved_piece_new.j == piece.j:
                         self.white_pieces.remove(piece)
                     else:
                         piece.en_passantable = False
         else:
             self.white_pieces = [piece for piece in self.white_pieces if piece != moved_piece_old] + [moved_piece_new]
+            if moved_piece_old.value == KING and abs(moved_piece_new.j-moved_piece_old.j) == 2:
+                # Castle, so we have to update rook that castled
+                if moved_piece_new.j > moved_piece_old.j:
+                    # MOVED TO RIGHT
+                    self.white_pieces.remove(Rook((7, 7), WHITE, False))
+                    self.white_pieces.append(Rook((7, moved_piece_new.j-1), WHITE, True))
+                else:
+                    # MOVED TO LEFT
+                    self.white_pieces.remove(Rook((7, 0), WHITE, False))
+                    self.white_pieces.append(Rook((7, moved_piece_new.j + 1), WHITE, True))
             # Remove black piece if it's captured
             self.black_pieces = [piece for piece in self.black_pieces if
                                  piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
             for piece in self.black_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
-                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i-1 and moved_piece_new.j == piece.j:
+                    if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i - 1 and moved_piece_new.j == piece.j:
                         self.black_pieces.remove(piece)
                     else:
                         piece.en_passantable = False

@@ -11,5 +11,7 @@ class King(Piece):
         output = [King((self.i+i, self.j+j), self.colour, True) for i in range(-1, 2, 1)
                   for j in range(-1, 2, 1) if 0 <= self.i+i < 8 and 0 <= self.j+j < 8 and not (i == j == 0)]
 
-        # ADD CASTLING!
+        # Castling
+        if not self.has_moved:
+            output += [King((self.i, self.j+2), self.colour, True), King((self.i, self.j-2), self.colour, True)]
         return output
