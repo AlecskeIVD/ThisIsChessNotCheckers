@@ -74,7 +74,6 @@ A function that returns ALL possible valid gamestates after colour makes a move
         output = []
         for move in self.generate_all_moves(colour):
             if self.is_legal(move):
-                # print(f"{move.white_pieces[-1].value} is able to move to ({move.white_pieces[-1].i},{move.white_pieces[-1].j})")
                 output.append(move)
         return output
 
