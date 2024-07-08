@@ -8,6 +8,7 @@ from pieces.knight import Knight
 from pieces.queen import Queen
 from src.gamestate import Gamestate
 from random import randint
+from time import sleep
 
 
 # INITIALISING WINDOW
@@ -91,15 +92,19 @@ def main(version: int = 0):
                                 selected_piece = None
                     gs.draw_board(WINDOW)
                     pg.display.update()
+                    selected_piece = None
                     if gs.white_wins():
                         run = False
                         print("White has won!")
+                        sleep(3)
                     elif gs.black_wins():
                         run = False
                         print("Black has won")
+                        sleep(3)
                     elif gs.stalemate():
                         run = False
                         print("Stalemate; no more legal moves")
+                        sleep(3)
 
     pg.quit()
 
