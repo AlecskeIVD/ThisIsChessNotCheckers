@@ -68,32 +68,48 @@ def main(version: int = 0):
                     if target_piece is None:
                         selected_piece = None
                     else:
+                        print(f"Found the target piece: {rgb_to_colour.get(target_piece.colour)} "
+                              f"{value_to_name[target_piece.value]} piece at {index_to_column[target_piece.j]}"
+                              f"{index_to_row[target_piece.i]}")
                         if selected_piece.colour == WHITE:
                             target_gs = Gamestate([piece for piece in gs.white_pieces if piece != selected_piece]+[target_piece], gs.black_pieces, gs.move+1)
+                            print("Created the target_gs")
                             if gs.is_legal(target_gs):
+                                print('target_gs is legal')
                                 gs.update(target_gs)
+                                print("Gs is updated to target_gs")
                             else:
                                 selected_piece = None
                         else:
                             target_gs = Gamestate(gs.white_pieces,
                                 [piece for piece in gs.black_pieces if piece != selected_piece] + [target_piece],
                                 gs.move + 1)
+                            print("Created the target_gs")
                             if gs.is_legal(target_gs):
+                                print('target_gs is legal')
                                 gs.update(target_gs)
+                                print("Gs is updated to target_gs")
                             else:
                                 selected_piece = None
                     gs.draw_board(WINDOW)
                     pg.display.update()
                     selected_piece = None
+                    print('Checking if black has legal moves')
+                    gs.legal_moves(BLACK)
+                    print('Checking if white has legal moves')
+                    gs.legal_moves(WHITE)
+                    print('Checking if white has won')
                     if gs.white_wins():
                         run = False
                         print("White has won!")
                         sleep(3)
-                    elif gs.black_wins():
+                    print('Checking if black has won')
+                    if gs.black_wins():
                         run = False
                         print("Black has won")
                         sleep(3)
-                    elif gs.stalemate():
+                    print('Checking if it is a draw')
+                    if gs.stalemate():
                         run = False
                         print("Stalemate; no more legal moves")
                         sleep(3)
