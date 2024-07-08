@@ -9,7 +9,7 @@ from pieces.queen import Queen
 
 
 class Gamestate:
-    def __init__(self, white_pieces=None, black_pieces=None, move=1):
+    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False):
         if black_pieces is None:
             black_pieces = []
         if white_pieces is None:
@@ -28,17 +28,18 @@ class Gamestate:
             for i in range(COLUMNS):
                 black_pieces.append(Pawn((1, i), BLACK))
         self.black_pieces = black_pieces
-
-        # LOAD IMAGES
-        pieces = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
         self.images = {}
-        for piece in pieces:
-            self.images[f"{piece}_black"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_black.png"),
-                                                               (SQUAREWIDTH, SQUAREWIDTH))
-            # white_image = convert_black_to_white(self.images.get(f"{piece}_black"))
-            # pg.image.save(white_image, "assets/images/" + piece + "_white.png")
-            self.images[f"{piece}_white"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_white.png"),
-                                                               (SQUAREWIDTH, SQUAREWIDTH))
+        if load_images:
+            # LOAD IMAGES
+            pieces = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']
+            self.images = {}
+            for piece in pieces:
+                self.images[f"{piece}_black"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_black.png"),
+                                                                   (SQUAREWIDTH, SQUAREWIDTH))
+                # white_image = convert_black_to_white(self.images.get(f"{piece}_black"))
+                # pg.image.save(white_image, "assets/images/" + piece + "_white.png")
+                self.images[f"{piece}_white"] = pg.transform.scale(pg.image.load("assets/images/" + piece + "_white.png"),
+                                                                   (SQUAREWIDTH, SQUAREWIDTH))
         self.move = move
 
     def get_piece(self, i, j):

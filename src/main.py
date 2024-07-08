@@ -1,5 +1,4 @@
 import pygame as pg
-import time
 from assets.constants import *
 from pieces.rook import Rook
 from pieces.pawn import Pawn
@@ -20,16 +19,16 @@ value_to_name = {1: "pawn", 3: "knight", 4: "bishop", 5: "rook", 8: "queen", 9: 
 rgb_to_colour = {WHITE: "white", BLACK: "black"}
 index_to_column = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
 index_to_row = {}
-for i in range(8):
-    index_to_row[i] = 8-i
+for row in range(8):
+    index_to_row[row] = 8-row
 
 
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate([Pawn((6, i), WHITE) for i in range(7)] + [Queen((7, 1), WHITE), King((7, 2), WHITE)],
-                    [King((5, 5), BLACK)])
-    # gs = Gamestate()
+    # gs = Gamestate([Pawn((6, i), WHITE) for i in range(7)] + [Queen((7, 1), WHITE), King((7, 2), WHITE)],
+    #                [King((5, 5), BLACK)], load_images=True)
+    gs = Gamestate(load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
