@@ -44,13 +44,22 @@ class Gamestate:
                     (SQUAREWIDTH, SQUAREWIDTH))
         self.move = move
 
-    def get_piece(self, i, j):
-        for piece in self.white_pieces:
-            if piece.i == i and piece.j == j:
-                return piece
-        for piece in self.black_pieces:
-            if piece.i == i and piece.j == j:
-                return piece
+    def get_piece(self, i, j, colour=None):
+        if colour is None:
+            for piece in self.white_pieces:
+                if piece.i == i and piece.j == j:
+                    return piece
+            for piece in self.black_pieces:
+                if piece.i == i and piece.j == j:
+                    return piece
+        elif colour == WHITE:
+            for piece in self.white_pieces:
+                if piece.i == i and piece.j == j:
+                    return piece
+        else:
+            for piece in self.black_pieces:
+                if piece.i == i and piece.j == j:
+                    return piece
         return None
 
     def white_wins(self):
@@ -99,19 +108,21 @@ Checks if the king of team 'colour' is in check
         horizontal_index_left = king.j - 1
         horizontal_index_right = king.j + 1
         while horizontal_index_left >= 0 and not blocking_piece_found:
-            piece = self.get_piece(king.i, horizontal_index_left)
+            piece = self.get_piece(king.i, horizontal_index_left, opposite(colour))
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i, horizontal_index_left, colour) is not None:
                 blocking_piece_found = True
             else:
                 horizontal_index_left -= 1
         blocking_piece_found = False
         while horizontal_index_right < 8 and not blocking_piece_found:
-            piece = self.get_piece(king.i, horizontal_index_right)
+            piece = self.get_piece(king.i, horizontal_index_right, opposite(colour))
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i, horizontal_index_right, colour) is not None:
                 blocking_piece_found = True
             else:
                 horizontal_index_right += 1
@@ -121,19 +132,21 @@ Checks if the king of team 'colour' is in check
         vertical_index_up = king.i - 1
         vertical_index_down = king.i + 1
         while vertical_index_up >= 0 and not blocking_piece_found:
-            piece = self.get_piece(vertical_index_up, king.j)
+            piece = self.get_piece(vertical_index_up, king.j, opposite(colour))
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(vertical_index_up, king.j, colour) is not None:
                 blocking_piece_found = True
             else:
                 vertical_index_up -= 1
         blocking_piece_found = False
         while vertical_index_down < 8 and not blocking_piece_found:
-            piece = self.get_piece(vertical_index_down, king.j)
+            piece = self.get_piece(vertical_index_down, king.j, opposite(colour))
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(vertical_index_down, king.j, colour) is not None:
                 blocking_piece_found = True
             else:
                 vertical_index_down += 1
@@ -147,54 +160,58 @@ Checks if the king of team 'colour' is in check
 
         # Bottom right
         while king.i + index_br < 8 and king.j + index_br < 8 and not blocking_piece_found:
-            piece = self.get_piece(king.i + index_br, king.j + index_br)
+            piece = self.get_piece(king.i + index_br, king.j + index_br, opposite(colour))
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i + index_br, king.j + index_br, colour) is not None:
                 blocking_piece_found = True
             else:
                 index_br += 1
         blocking_piece_found = False
         # Bottom left
         while king.i + index_bl < 8 and king.j - index_bl >= 0 and not blocking_piece_found:
-            piece = self.get_piece(king.i + index_bl, king.j - index_bl)
+            piece = self.get_piece(king.i + index_bl, king.j - index_bl, opposite(colour))
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i + index_bl, king.j - index_bl, colour) is not None:
                 blocking_piece_found = True
             else:
                 index_bl += 1
         blocking_piece_found = False
         # Top right
         while king.i - index_tr >= 0 and king.j + index_tr < 8 and not blocking_piece_found:
-            piece = self.get_piece(king.i - index_tr, king.j + index_tr)
+            piece = self.get_piece(king.i - index_tr, king.j + index_tr, opposite(colour))
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i - index_tr, king.j + index_tr, colour) is not None:
                 blocking_piece_found = True
             else:
                 index_tr += 1
         blocking_piece_found = False
         # Top left
         while king.i - index_tl >= 0 and king.j - index_tl >= 0 and not blocking_piece_found:
-            piece = self.get_piece(king.i - index_tl, king.j - index_tl)
+            piece = self.get_piece(king.i - index_tl, king.j - index_tl, opposite(colour))
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
-                return True
-            elif piece is not None:
+                if self.get_piece(piece.i, piece.j, colour) is None:
+                    return True
+            elif piece is not None or self.get_piece(king.i - index_tl, king.j - index_tl, colour) is not None:
                 blocking_piece_found = True
             else:
                 index_tl += 1
-        piece_top_left = self.get_piece(king.i - 1, king.j - 1)
-        piece_top_right = self.get_piece(king.i - 1, king.j + 1)
-        piece_bottom_left = self.get_piece(king.i + 1, king.j - 1)
-        piece_bottom_right = self.get_piece(king.i + 1, king.j + 1)
+        piece_top_left = self.get_piece(king.i - 1, king.j - 1, opposite(colour))
+        piece_top_right = self.get_piece(king.i - 1, king.j + 1, opposite(colour))
+        piece_bottom_left = self.get_piece(king.i + 1, king.j - 1, opposite(colour))
+        piece_bottom_right = self.get_piece(king.i + 1, king.j + 1, opposite(colour))
         # Check if a pawn can attack king
         if (king.colour == WHITE and (
-                (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN) or (
-                piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN))) or (
-                king.colour == BLACK and ((
-                                                  piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN) or (
-                                                  piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN))):
+                (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and self.get_piece(king.i - 1, king.j - 1, colour) is None) or (
+                piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN and self.get_piece(king.i - 1, king.j + 1, colour) is None))) or\
+                (king.colour == BLACK and ((
+                                                  piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(king.i + 1, king.j - 1, colour) is None) or (
+                                                  piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN and self.get_piece(king.i + 1, king.j + 1, colour) is None))):
             return True
 
         # Check if a knight can attack king
@@ -202,12 +219,22 @@ Checks if the king of team 'colour' is in check
             for piece in self.black_pieces:
                 if piece.value == KNIGHT and ((abs(piece.i - king.i) == 2 and abs(piece.j - king.j) == 1) or (
                         abs(piece.i - king.i) == 1 and abs(piece.j - king.j) == 2)):
-                    return True
+                    captured = False
+                    for own_piece in self.white_pieces:
+                        if own_piece.i == piece.i and own_piece.j == piece.j:
+                            captured = True
+                    if not captured:
+                        return True
         else:
             for piece in self.white_pieces:
                 if piece.value == KNIGHT and ((abs(piece.i - king.i) == 2 and abs(piece.j - king.j) == 1) or (
                         abs(piece.i - king.i) == 1 and abs(piece.j - king.j) == 2)):
-                    return True
+                    captured = False
+                    for own_piece in self.black_pieces:
+                        if own_piece.i == piece.i and own_piece.j == piece.j:
+                            captured = True
+                    if not captured:
+                        return True
 
         # Check if other king can attack king
         if colour == WHITE:
@@ -710,3 +737,9 @@ def convert_black_to_white(image):
                 r, g, b = WHITE
                 white_image.set_at((x, y), (r, g, b, a))
     return white_image
+
+
+def opposite(colour):
+    if colour == WHITE:
+        return BLACK
+    return WHITE
