@@ -27,8 +27,6 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    # gs = Gamestate([Pawn((6, i), WHITE) for i in range(7)] + [Queen((7, 1), WHITE), King((7, 2), WHITE)],
-    #                [King((5, 5), BLACK)], load_images=True)
     gs = Gamestate(load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
