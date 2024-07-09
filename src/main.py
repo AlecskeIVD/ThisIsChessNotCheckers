@@ -5,6 +5,8 @@ from time import sleep
 
 
 # INITIALISING WINDOW
+from src.pieces.bishop import Bishop
+
 WINDOW = pg.display.set_mode((WIDTH, HEIGHT))
 pg.display.set_caption("Chess")
 
@@ -21,6 +23,9 @@ def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
     gs = Gamestate(load_images=True)
+    new_gs = Gamestate([wp for wp in gs.white_pieces if wp != Bishop((7, 2), WHITE)] + [Bishop((5, 0), WHITE)],
+                                       gs.black_pieces.copy(), gs.move + 1)
+    gs.is_legal(new_gs)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()

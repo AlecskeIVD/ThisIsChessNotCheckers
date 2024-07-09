@@ -417,7 +417,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                 return True
             else:
                 # Went to top left
-                for n in range(1, moved_piece_new.i - moved_piece_old.i):
+                for n in range(1, moved_piece_old.i-moved_piece_new.i):
                     if self.get_piece(moved_piece_old.i - n, moved_piece_old.j - n) is not None:
                         return False
                 return True
