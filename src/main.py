@@ -32,13 +32,7 @@ def main(version: int = 0):
             if event.type == pg.QUIT:
                 run = False
             if event.type == pg.KEYDOWN:
-                print(gs.move)
-                if gs.move % 2 == 1:
-                    lm = gs.legal_moves(WHITE)
-                else:
-                    lm = gs.legal_moves(BLACK)
-                newmove = lm[randint(0, len(lm) - 1)]
-                gs.update(newmove)
+                gs.computer_makes_move(version)
                 gs.draw_board(WINDOW)
                 pg.display.update()
                 if gs.white_wins():
@@ -102,4 +96,5 @@ def main(version: int = 0):
 
 
 if __name__ == '__main__':
+    version = int(input("Which version would you like the computer to have? "))
     main()

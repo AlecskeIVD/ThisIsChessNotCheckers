@@ -1,3 +1,5 @@
+from random import randint
+
 from assets.constants import *
 import pygame as pg
 from pieces.rook import Rook
@@ -716,6 +718,24 @@ removing captured elements and restoring en-passantable values for pawns of colo
         for piece in self.black_pieces:
             window.blit(self.images[value_to_name.get(piece.value) + "_black"],
                         (piece.j * SQUAREWIDTH, piece.i * SQUAREWIDTH))
+
+    def computer_makes_move(self, version: int):
+        """
+Updates 'self' to new gamestate where computer made move, based on 'version'
+        :param version: chooses which version decides next move
+        """
+        if version == 0:
+            self.random_move()
+        else:
+            raise Exception
+
+    def random_move(self):
+        if self.move % 2 == 1:
+            lm = self.legal_moves(WHITE)
+        else:
+            lm = self.legal_moves(BLACK)
+        new_move = lm[randint(0, len(lm) - 1)]
+        self.update(new_move)
 
 
 def convert_black_to_white(image):
