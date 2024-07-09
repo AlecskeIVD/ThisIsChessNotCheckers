@@ -114,8 +114,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i, horizontal_index_left, colour) is not None:
                 blocking_piece_found = True
-            else:
-                horizontal_index_left -= 1
+            horizontal_index_left -= 1
         blocking_piece_found = False
         while horizontal_index_right < 8 and not blocking_piece_found:
             piece = self.get_piece(king.i, horizontal_index_right, opposite(colour))
@@ -124,8 +123,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i, horizontal_index_right, colour) is not None:
                 blocking_piece_found = True
-            else:
-                horizontal_index_right += 1
+            horizontal_index_right += 1
 
         # Check if a rook or queen can attack king from vertical line
         blocking_piece_found = False
@@ -138,8 +136,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(vertical_index_up, king.j, colour) is not None:
                 blocking_piece_found = True
-            else:
-                vertical_index_up -= 1
+            vertical_index_up -= 1
         blocking_piece_found = False
         while vertical_index_down < 8 and not blocking_piece_found:
             piece = self.get_piece(vertical_index_down, king.j, opposite(colour))
@@ -148,8 +145,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(vertical_index_down, king.j, colour) is not None:
                 blocking_piece_found = True
-            else:
-                vertical_index_down += 1
+            vertical_index_down += 1
 
         # Check if bishop or queen can attack from diagonal:
         blocking_piece_found = False
@@ -166,8 +162,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i + index_br, king.j + index_br, colour) is not None:
                 blocking_piece_found = True
-            else:
-                index_br += 1
+            index_br += 1
         blocking_piece_found = False
         # Bottom left
         while king.i + index_bl < 8 and king.j - index_bl >= 0 and not blocking_piece_found:
@@ -177,8 +172,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i + index_bl, king.j - index_bl, colour) is not None:
                 blocking_piece_found = True
-            else:
-                index_bl += 1
+            index_bl += 1
         blocking_piece_found = False
         # Top right
         while king.i - index_tr >= 0 and king.j + index_tr < 8 and not blocking_piece_found:
@@ -188,8 +182,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i - index_tr, king.j + index_tr, colour) is not None:
                 blocking_piece_found = True
-            else:
-                index_tr += 1
+            index_tr += 1
         blocking_piece_found = False
         # Top left
         while king.i - index_tl >= 0 and king.j - index_tl >= 0 and not blocking_piece_found:
@@ -199,8 +192,7 @@ Checks if the king of team 'colour' is in check
                     return True
             elif piece is not None or self.get_piece(king.i - index_tl, king.j - index_tl, colour) is not None:
                 blocking_piece_found = True
-            else:
-                index_tl += 1
+            index_tl += 1
         piece_top_left = self.get_piece(king.i - 1, king.j - 1, opposite(colour))
         piece_top_right = self.get_piece(king.i - 1, king.j + 1, opposite(colour))
         piece_bottom_left = self.get_piece(king.i + 1, king.j - 1, opposite(colour))
