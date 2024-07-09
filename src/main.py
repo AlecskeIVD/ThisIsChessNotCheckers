@@ -1,7 +1,6 @@
 import pygame as pg
 from assets.constants import *
 from src.gamestate import Gamestate
-from random import randint
 from time import sleep
 
 
@@ -96,5 +95,5 @@ def main(version: int = 0):
 
 
 if __name__ == '__main__':
-    version = int(input("Which version would you like the computer to have? "))
-    main()
+    v = int(input("Which version would you like the computer to have? "))
+    main(v)

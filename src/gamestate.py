@@ -201,11 +201,16 @@ Checks if the king of team 'colour' is in check
         piece_bottom_right = self.get_piece(king.i + 1, king.j + 1, opposite(colour))
         # Check if a pawn can attack king
         if (king.colour == WHITE and (
-                (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and self.get_piece(king.i - 1, king.j - 1, colour) is None) or (
-                piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN and self.get_piece(king.i - 1, king.j + 1, colour) is None))) or\
+                (
+                        piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and self.get_piece(
+                    king.i - 1, king.j - 1, colour) is None) or (
+                        piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN and self.get_piece(
+                    king.i - 1, king.j + 1, colour) is None))) or \
                 (king.colour == BLACK and ((
-                                                  piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(king.i + 1, king.j - 1, colour) is None) or (
-                                                  piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN and self.get_piece(king.i + 1, king.j + 1, colour) is None))):
+                                                   piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(
+                                               king.i + 1, king.j - 1, colour) is None) or (
+                                                   piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN and self.get_piece(
+                                               king.i + 1, king.j + 1, colour) is None))):
             return True
 
         # Check if a knight can attack king
@@ -297,7 +302,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
 
         # Check if king is capturable after move made (or attempt to castle, which needs different kind of check)
         if new_board.king_under_attack(moved_piece_old.colour) and not (moved_piece_old.value == KING and not
-                                                                        self.king_under_attack(moved_piece_old.colour)
+        self.king_under_attack(moved_piece_old.colour)
                                                                         and moved_piece_old.i == moved_piece_new.i and
                                                                         abs(moved_piece_old.j - moved_piece_new.j) == 2
                                                                         and not moved_piece_old.has_moved):
@@ -539,21 +544,24 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                         return False
                     # CHECK IF KING IS SAFE AFTER MOVING ROOK
                     correct_gs = Gamestate([piece for piece in new_board.white_pieces if piece != possible_rook] + [
-                            Rook((possible_rook.i, moved_piece_new.j+1), WHITE, True) for _ in range(1) if
-                            moved_piece_old.colour == WHITE], [piece for piece in new_board.black_pieces if piece != possible_rook] + [
-                            Rook((possible_rook.i, moved_piece_new.j+1), BLACK, True) for _ in range(1) if
-                            moved_piece_old.colour == BLACK])
+                        Rook((possible_rook.i, moved_piece_new.j + 1), WHITE, True) for _ in range(1) if
+                        moved_piece_old.colour == WHITE],
+                                           [piece for piece in new_board.black_pieces if piece != possible_rook] + [
+                                               Rook((possible_rook.i, moved_piece_new.j + 1), BLACK, True) for _ in
+                                               range(1) if
+                                               moved_piece_old.colour == BLACK])
                     if correct_gs.king_under_attack(moved_piece_old.colour):
                         return False
 
                     # CHECK IF 2 SQUARES ARE NOT ATTACKABLE
 
                     check_gs_1 = Gamestate([piece for piece in self.white_pieces if piece != moved_piece_old] + [
-                            King((moved_piece_old.i, moved_piece_old.j - 1), WHITE, True) for i in range(1) if
-                            moved_piece_old.colour == WHITE],
-                        [piece for piece in self.black_pieces if piece != moved_piece_old] + [
-                            King((moved_piece_old.i, moved_piece_old.j - 1), BLACK, True) for i in range(1) if
-                            moved_piece_old.colour == BLACK])
+                        King((moved_piece_old.i, moved_piece_old.j - 1), WHITE, True) for i in range(1) if
+                        moved_piece_old.colour == WHITE],
+                                           [piece for piece in self.black_pieces if piece != moved_piece_old] + [
+                                               King((moved_piece_old.i, moved_piece_old.j - 1), BLACK, True) for i in
+                                               range(1) if
+                                               moved_piece_old.colour == BLACK])
 
                     check_gs_2 = Gamestate(
                         [piece for piece in self.white_pieces if piece != moved_piece_old] + [
@@ -659,12 +667,12 @@ removing captured elements and restoring en-passantable values for pawns of colo
                 moved_piece_new = piece
         if moved_piece_new.colour == BLACK:
             self.black_pieces = [piece for piece in self.black_pieces if piece != moved_piece_old] + [moved_piece_new]
-            if moved_piece_old.value == KING and abs(moved_piece_new.j-moved_piece_old.j) == 2:
+            if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
                     # MOVED TO RIGHT
                     self.black_pieces.remove(Rook((0, 7), BLACK, False))
-                    self.black_pieces.append(Rook((0, moved_piece_new.j-1), BLACK, True))
+                    self.black_pieces.append(Rook((0, moved_piece_new.j - 1), BLACK, True))
                 else:
                     # MOVED TO LEFT
                     self.black_pieces.remove(Rook((0, 0), BLACK, False))
@@ -681,12 +689,12 @@ removing captured elements and restoring en-passantable values for pawns of colo
                         piece.en_passantable = False
         else:
             self.white_pieces = [piece for piece in self.white_pieces if piece != moved_piece_old] + [moved_piece_new]
-            if moved_piece_old.value == KING and abs(moved_piece_new.j-moved_piece_old.j) == 2:
+            if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
                     # MOVED TO RIGHT
                     self.white_pieces.remove(Rook((7, 7), WHITE, False))
-                    self.white_pieces.append(Rook((7, moved_piece_new.j-1), WHITE, True))
+                    self.white_pieces.append(Rook((7, moved_piece_new.j - 1), WHITE, True))
                 else:
                     # MOVED TO LEFT
                     self.white_pieces.remove(Rook((7, 0), WHITE, False))
@@ -726,6 +734,8 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         """
         if version == 0:
             self.random_move()
+        elif version == 1:
+            self.maximize_value()
         else:
             raise Exception
 
@@ -736,6 +746,65 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             lm = self.legal_moves(BLACK)
         new_move = lm[randint(0, len(lm) - 1)]
         self.update(new_move)
+
+    def maximize_value(self):
+        """
+Looks at every possible move it can make and selects one (random) which maximizes sum of values of pieces - sum of
+values of pieces of other colour
+        """
+        best_moves = []
+        best_value = None
+        if self.move % 2 == 1:
+            lm = self.legal_moves(WHITE)
+            for move in lm:
+                value = 0
+                moved_piece = None
+                for piece in move.white_pieces:
+                    value += piece.value
+                    if piece not in self.white_pieces:
+                        moved_piece = piece
+                if best_value is None or best_value < value:
+                    for piece in move.black_pieces:
+                        if (piece.i != moved_piece.i or piece.j != moved_piece.j) and not (moved_piece.value == PAWN and
+                                                                                           piece.value == PAWN and
+                                                                                           piece.en_passantable and
+                                                                                           piece.j == moved_piece.j
+                                                                                           and piece.i - 1 ==
+                                                                                           moved_piece.i):
+                            value -= piece.value
+                    if best_value is None or best_value < value:
+                        best_moves = [move]
+                        best_value = value
+                    elif best_value == value:
+                        best_moves.append(move)
+            chosen_move = best_moves[randint(0, len(best_moves) - 1)]
+            self.update(chosen_move)
+
+        else:
+            lm = self.legal_moves(BLACK)
+            for move in lm:
+                value = 0
+                moved_piece = None
+                for piece in move.black_pieces:
+                    value += piece.value
+                    if piece not in self.black_pieces:
+                        moved_piece = piece
+                if best_value is None or best_value < value:
+                    for piece in move.white_pieces:
+                        if (piece.i != moved_piece.i or piece.j != moved_piece.j) and (moved_piece.value != PAWN or
+                                                                                       piece.value != PAWN or
+                                                                                       not piece.en_passantable or
+                                                                                       piece.j != moved_piece.j
+                                                                                       or piece.i + 1 !=
+                                                                                       moved_piece.i):
+                            value -= piece.value
+                    if best_value is None or best_value < value:
+                        best_moves = [move]
+                        best_value = value
+                    elif best_value == value:
+                        best_moves.append(move)
+            chosen_move = best_moves[randint(0, len(best_moves) - 1)]
+            self.update(chosen_move)
 
 
 def convert_black_to_white(image):
