@@ -75,8 +75,78 @@ class Gamestate:
         return False
 
     def stalemate(self):
-        return (self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
-               (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK))
+        if(self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
+               (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK)):
+            return True
+
+        # CHECK FOR INSUFFICIENT MATERIAL
+        if len(self.black_pieces) == len(self.white_pieces) == 1:
+            return True
+        wknight_count, wbishop_count = 0, 0
+        bknight_count, bbishop_count = 0, 0
+        black_bishop = None
+        white_bishop = None
+        for piece in self.white_pieces:
+            if piece.value == PAWN:
+                return False
+            elif piece.value == KNIGHT:
+                wknight_count += 1
+            elif piece.value == ROOK:
+                return False
+            elif piece.value == QUEEN:
+                return False
+            elif piece.value == BISHOP:
+                wbishop_count += 1
+                white_bishop = piece
+
+        for piece in self.black_pieces:
+            if piece.value == PAWN:
+                return False
+            elif piece.value == KNIGHT:
+                bknight_count += 1
+            elif piece.value == ROOK:
+                return False
+            elif piece.value == QUEEN:
+                return False
+            elif piece.value == BISHOP:
+                bbishop_count += 1
+                black_bishop = piece
+
+        # bishop vs knight is a draw
+        if bbishop_count == 1 and bknight_count == 0 and wbishop_count == 0 and wknight_count == 1:
+            return True
+        if wbishop_count == 1 and wknight_count == 0 and bbishop_count == 0 and bknight_count == 1:
+            return True
+
+        # only a knight can never force checkmate
+        if bbishop_count == 0 and bknight_count == 0 and wbishop_count == 0 and wknight_count == 1:
+            return True
+        if bbishop_count == 0 and bknight_count == 1 and wbishop_count == 0 and wknight_count == 0:
+            return True
+        if bbishop_count == 0 and bknight_count == 1 and wbishop_count == 0 and wknight_count == 1:
+            return True
+
+        # bishops on same diagonal can't force checkmate
+        if bbishop_count == 1 and bknight_count == 0 and wbishop_count == 1 and wknight_count == 0 and \
+                (white_bishop.i + white_bishop.j % 2) == (black_bishop.i + black_bishop.j % 2):
+            return True
+
+        # 2 knights can't force a checkmate
+        if bbishop_count == 0 and bknight_count == 2 and wbishop_count == 0 and wknight_count == 0:
+            return True
+        if bbishop_count == 0 and bknight_count == 0 and wbishop_count == 0 and wknight_count == 2:
+            return True
+
+        # lone bishop can't force a checkmate
+        if bbishop_count == 1 and bknight_count == 0 and wbishop_count == 0 and wknight_count == 0:
+            return True
+        if bbishop_count == 0 and bknight_count == 0 and wbishop_count == 1 and wknight_count == 0:
+            return True
+        return False
+
+
+
+
 
     def legal_moves(self, colour) -> list['Gamestate']:
         """
