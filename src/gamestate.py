@@ -199,18 +199,18 @@ Checks if the king of team 'colour' is in check
         piece_top_right = self.get_piece(king.i - 1, king.j + 1, opposite(colour))
         piece_bottom_left = self.get_piece(king.i + 1, king.j - 1, opposite(colour))
         piece_bottom_right = self.get_piece(king.i + 1, king.j + 1, opposite(colour))
+
         # Check if a pawn can attack king
         if (king.colour == WHITE and (
-                (
-                        piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and self.get_piece(
-                    king.i - 1, king.j - 1, colour) is None) or (
-                        piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value == PAWN and self.get_piece(
-                    king.i - 1, king.j + 1, colour) is None))) or \
-                (king.colour == BLACK and ((
-                                                   piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(
-                                               king.i + 1, king.j - 1, colour) is None) or (
-                                                   piece_bottom_right is not None and piece_bottom_right.colour == WHITE and piece_bottom_right.value == PAWN and self.get_piece(
-                                               king.i + 1, king.j + 1, colour) is None))):
+                (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and
+                 self.get_piece(king.i - 1, king.j - 1, colour) is None and not (piece_top_left.en_passantable and self.get_piece(king.i - 2, king.j - 1, colour) is not None)) or (
+                        piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value ==
+                        PAWN and self.get_piece(king.i - 1, king.j + 1, colour) is None and not (piece_top_right.en_passantable and self.get_piece(king.i - 2, king.j + 1, colour) is not None)))) or \
+                (king.colour == BLACK and ((piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(
+                                               king.i + 1, king.j - 1, colour) is None and not (piece_bottom_left.en_passantable and self.get_piece(king.i + 2, king.j - 1, colour) is not None)) or (
+                                                   piece_bottom_right is not None and piece_bottom_right.colour == WHITE
+                                                   and piece_bottom_right.value == PAWN and
+                                                   self.get_piece(king.i + 1, king.j + 1, colour) is None and not (piece_bottom_right.en_passantable and self.get_piece(king.i + 2, king.j + 1 , colour) is not None)))):
             return True
 
         # Check if a knight can attack king
