@@ -727,6 +727,40 @@ removing captured elements and restoring en-passantable values for pawns of colo
             window.blit(self.images[value_to_name.get(piece.value) + "_black"],
                         (piece.j * SQUAREWIDTH, piece.i * SQUAREWIDTH))
 
+    def deep_copy(self):
+        """
+Returns a copy of a gamestate where every piece is a copy of one of the pieces of 'self'
+        """
+        new_white_pieces = []
+        for piece in self.white_pieces:
+            if piece.value == PAWN:
+                new_white_pieces.append(Pawn((piece.i, piece.j), piece.colour, piece.en_passantable))
+            elif piece.value == KING:
+                new_white_pieces.append(King((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == QUEEN:
+                new_white_pieces.append(Queen((piece.i, piece.j), piece.colour))
+            elif piece.value == ROOK:
+                new_white_pieces.append(Rook((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == BISHOP:
+                new_white_pieces.append(Bishop((piece.i, piece.j), piece.colour))
+            elif piece.value == KNIGHT:
+                new_white_pieces.append(Knight((piece.i, piece.j), piece.colour))
+        new_black_pieces = []
+        for piece in self.black_pieces:
+            if piece.value == PAWN:
+                new_black_pieces.append(Pawn((piece.i, piece.j), piece.colour, piece.en_passantable))
+            elif piece.value == KING:
+                new_black_pieces.append(King((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == QUEEN:
+                new_black_pieces.append(Queen((piece.i, piece.j), piece.colour))
+            elif piece.value == ROOK:
+                new_black_pieces.append(Rook((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == BISHOP:
+                new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
+            elif piece.value == KNIGHT:
+                new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
+            return Gamestate(new_white_pieces, new_black_pieces, self.move)
+
     def computer_makes_move(self, version: int):
         """
 Updates 'self' to new gamestate where computer made move, based on 'version'

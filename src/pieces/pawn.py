@@ -4,9 +4,9 @@ from .queen import Queen
 
 
 class Pawn(Piece):
-    def __init__(self, position: (int, int), colour: (int, int, int)):
+    def __init__(self, position: (int, int), colour: (int, int, int), en_passantable=False):
         super().__init__(position, colour, PAWN)
-        self.en_passantable = False
+        self.en_passantable = en_passantable
 
     def generate_possible_moves(self):
         output = []
