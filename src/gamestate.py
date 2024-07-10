@@ -489,7 +489,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                     return True
                 else:
                     # Went to top left
-                    for n in range(1, moved_piece_new.i - moved_piece_old.i):
+                    for n in range(1, moved_piece_old.i - moved_piece_new.i):
                         if self.get_piece(moved_piece_old.i - n, moved_piece_old.j - n) is not None:
                             return False
                     return True
@@ -759,7 +759,7 @@ Returns a copy of a gamestate where every piece is a copy of one of the pieces o
                 new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
             elif piece.value == KNIGHT:
                 new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
-            return Gamestate(new_white_pieces, new_black_pieces, self.move)
+        return Gamestate(new_white_pieces, new_black_pieces, self.move)
 
     def computer_makes_move(self, version: int):
         """
@@ -770,6 +770,9 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             self.random_move()
         elif version == 1:
             self.maximize_value()
+        elif version == 2:
+            move = self.minmax(depth=2, maximise=(self.move % 2 == 1))[0]
+            self.update(move)
         else:
             raise Exception
 
@@ -839,6 +842,79 @@ values of pieces of other colour
                         best_moves.append(move)
             chosen_move = best_moves[randint(0, len(best_moves) - 1)]
             self.update(chosen_move)
+
+    def minmax(self, depth: int, maximise: bool) -> ('Gamestate', int):
+        """
+Returns the best possible move, based on next best possible move by opponent, based on next best possible move by self,
+until depth is reached and simple move is chosen based on piece evaluation
+        :param depth:
+        :param maximise: Says if function has to minimise or maximum evaluation on this iteration
+        """
+        maximise_to_colour = {True: WHITE, False: BLACK}
+        if depth == 0:
+            best_move = None
+            best_value = None
+            if maximise:
+                for move in self.legal_moves(maximise_to_colour.get(maximise)):
+                    value = 0
+                    moved_piece = None
+                    for piece in move.white_pieces:
+                        value += piece.value
+                        if piece not in self.white_pieces:
+                            moved_piece = piece
+                    if best_value is None or best_value < value:
+                        for piece in move.black_pieces:
+                            if (piece.i != moved_piece.i or piece.j != moved_piece.j) and not (
+                                    moved_piece.value == PAWN and
+                                    piece.value == PAWN and
+                                    piece.en_passantable and
+                                    piece.j == moved_piece.j
+                                    and piece.i - 1 ==
+                                    moved_piece.i):
+                                value -= piece.value
+                        if best_value is None or best_value < value:
+                            best_move = move
+                            best_value = value
+            else:
+                for move in self.legal_moves(maximise_to_colour.get(maximise)):
+                    value = 0
+                    moved_piece = None
+                    for piece in move.black_pieces:
+                        value -= piece.value
+                        if piece not in self.black_pieces:
+                            moved_piece = piece
+                    if best_value is None or best_value > value:
+                        for piece in move.white_pieces:
+                            if (piece.i != moved_piece.i or piece.j != moved_piece.j) and (moved_piece.value != PAWN or
+                                                                                           piece.value != PAWN or
+                                                                                           not piece.en_passantable or
+                                                                                           piece.j != moved_piece.j
+                                                                                           or piece.i + 1 !=
+                                                                                           moved_piece.i):
+                                value += piece.value
+                        if best_value is None or best_value > value:
+                            best_move = move
+                            best_value = value
+
+            return best_move, best_value
+        else:
+            # We have to update a gamestate to a new move, and then choose the one with the best eval based on maximise
+            best_value = None
+            best_move = None
+            for move in self.legal_moves(maximise_to_colour.get(maximise)):
+                new_gs = self.deep_copy()
+                new_gs.update(move)
+                # If we want to maximise, opponent wants to minimise and vice versa
+                new_move, value = new_gs.minmax(depth=depth-1, maximise=not maximise)
+                if maximise:
+                    if best_value is None or value > best_value:
+                        best_value = value
+                        best_move = move
+                else:
+                    if best_value is None or value < best_value:
+                        best_value = value
+                        best_move = move
+            return best_move, best_value
 
 
 def convert_black_to_white(image):

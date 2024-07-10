@@ -6,6 +6,10 @@ from time import sleep
 
 # INITIALISING WINDOW
 from src.pieces.bishop import Bishop
+from src.pieces.king import King
+from src.pieces.knight import Knight
+from src.pieces.queen import Queen
+from src.pieces.rook import Rook
 
 WINDOW = pg.display.set_mode((WIDTH, HEIGHT))
 pg.display.set_caption("Chess")
@@ -23,6 +27,9 @@ def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
     gs = Gamestate(load_images=True)
+    # gs = Gamestate([Knight(BP_WLKNIGHT, WHITE),
+    #                        Knight(BP_WRKNIGHT, WHITE), King(BP_WKING, WHITE)], [Knight(BP_BLKNIGHT, BLACK),
+    #                        Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)], load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
