@@ -965,7 +965,8 @@ until depth is reached and simple move is chosen based on piece evaluation
                         if best_value is None or best_value > value:
                             best_move = move
                             best_value = value
-
+            if best_value is None:
+                return None, 0
             return best_move, best_value
         else:
             # We have to update a gamestate to a new move, and then choose the one with the best eval based on maximise
@@ -984,6 +985,8 @@ until depth is reached and simple move is chosen based on piece evaluation
                     if best_value is None or value < best_value:
                         best_value = value
                         best_move = move
+            if best_value is None:
+                return None, 0
             return best_move, best_value
 
 

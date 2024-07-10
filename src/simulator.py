@@ -13,8 +13,6 @@ def main():
         gs = Gamestate()
         game_is_over = False
         while not game_is_over:
-            print(len(gs.white_pieces))
-            print(len(gs.black_pieces))
             gs.computer_makes_move(white)
             if gs.white_wins():
                 game_is_over = True
