@@ -11,7 +11,7 @@ from pieces.queen import Queen
 
 
 class Gamestate:
-    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False):
+    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1):
         if black_pieces is None:
             black_pieces = []
         if white_pieces is None:
@@ -45,6 +45,7 @@ class Gamestate:
                     pg.image.load("assets/images/" + piece + "_white.png"),
                     (SQUAREWIDTH, SQUAREWIDTH))
         self.move = move
+        self.last_non_drawing_turn = last_non_drawing_turn
 
     def get_piece(self, i, j, colour=None):
         if colour is None:
@@ -77,6 +78,10 @@ class Gamestate:
     def stalemate(self):
         if(self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
                (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK)):
+            return True
+
+        # 50 MOVE RULE
+        if self.move-self.last_non_drawing_turn >= 100:
             return True
 
         # CHECK FOR INSUFFICIENT MATERIAL
@@ -718,6 +723,8 @@ Updates this gamestate to make the move to 'transform to target_gamestate', whil
 removing captured elements and restoring en-passantable values for pawns of colour that just made move
         :param target_gamestate: desired gamestate
         """
+        old_len_white = len(self.white_pieces)
+        old_len_black = len(self.black_pieces)
         if not self.is_legal(target_gamestate):
             raise Exception
         moved_piece_old = None
@@ -779,6 +786,10 @@ removing captured elements and restoring en-passantable values for pawns of colo
                         self.black_pieces.remove(piece)
                     else:
                         piece.en_passantable = False
+        if len(self.white_pieces) != old_len_white or len(self.black_pieces) != old_len_black or \
+                moved_piece_old.value == PAWN:
+            # UPDATE LAST_NON_DRAWING_TURN IF CAPTURE OR PAWN MOVE
+            self.last_non_drawing_turn = self.move
         self.move += 1
 
     def draw_board(self, window):
@@ -829,7 +840,7 @@ Returns a copy of a gamestate where every piece is a copy of one of the pieces o
                 new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
             elif piece.value == KNIGHT:
                 new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
-        return Gamestate(new_white_pieces, new_black_pieces, self.move)
+        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn)
 
     def computer_makes_move(self, version: int):
         """
@@ -841,7 +852,7 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         elif version == 1:
             self.maximize_value()
         elif version == 2:
-            move = self.minmax(depth=2, maximise=(self.move % 2 == 1))[0]
+            move = self.minmax(depth=3, maximise=(self.move % 2 == 1))[0]
             self.update(move)
         else:
             raise Exception
@@ -922,52 +933,7 @@ until depth is reached and simple move is chosen based on piece evaluation
         """
         maximise_to_colour = {True: WHITE, False: BLACK}
         if depth == 0:
-            best_move = None
-            best_value = None
-            if maximise:
-                for move in self.legal_moves(maximise_to_colour.get(maximise)):
-                    value = 0
-                    moved_piece = None
-                    for piece in move.white_pieces:
-                        value += piece.value
-                        if piece not in self.white_pieces:
-                            moved_piece = piece
-                    if best_value is None or best_value < value:
-                        for piece in move.black_pieces:
-                            if (piece.i != moved_piece.i or piece.j != moved_piece.j) and not (
-                                    moved_piece.value == PAWN and
-                                    piece.value == PAWN and
-                                    piece.en_passantable and
-                                    piece.j == moved_piece.j
-                                    and piece.i - 1 ==
-                                    moved_piece.i):
-                                value -= piece.value
-                        if best_value is None or best_value < value:
-                            best_move = move
-                            best_value = value
-            else:
-                for move in self.legal_moves(maximise_to_colour.get(maximise)):
-                    value = 0
-                    moved_piece = None
-                    for piece in move.black_pieces:
-                        value -= piece.value
-                        if piece not in self.black_pieces:
-                            moved_piece = piece
-                    if best_value is None or best_value > value:
-                        for piece in move.white_pieces:
-                            if (piece.i != moved_piece.i or piece.j != moved_piece.j) and (moved_piece.value != PAWN or
-                                                                                           piece.value != PAWN or
-                                                                                           not piece.en_passantable or
-                                                                                           piece.j != moved_piece.j
-                                                                                           or piece.i + 1 !=
-                                                                                           moved_piece.i):
-                                value += piece.value
-                        if best_value is None or best_value > value:
-                            best_move = move
-                            best_value = value
-            if best_value is None:
-                return None, 0
-            return best_move, best_value
+            return None, self.evaluate()
         else:
             # We have to update a gamestate to a new move, and then choose the one with the best eval based on maximise
             best_value = None
@@ -986,8 +952,43 @@ until depth is reached and simple move is chosen based on piece evaluation
                         best_value = value
                         best_move = move
             if best_value is None:
+                if self.white_wins():
+                    return None, float('inf')
+                if self.black_wins():
+                    return None, float('-inf')
+
                 return None, 0
             return best_move, best_value
+
+    def evaluate(self) -> float:
+        """
+A heuristic function to make a guess on evaluation of current position without relying on generating on all next moves
+        """
+        value = 0
+        king_under_attack_value = 0.5
+        # if self.black_wins():
+        #     return float('-inf')
+        # if self.white_wins():
+        #     return float('inf')
+        # if self.stalemate():
+        #     return 0
+        for piece in self.white_pieces:
+            value += piece.value
+        for piece in self.black_pieces:
+            value -= piece.value
+
+        # promote checks
+        if self.king_under_attack(BLACK):
+            if self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0:
+                # WHITE WINS
+                return float('inf')
+            value += king_under_attack_value
+        if self.king_under_attack(WHITE):
+            if self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0:
+                # BLACK WINS
+                return float('-inf')
+            value -= king_under_attack_value
+        return value
 
 
 def convert_black_to_white(image):
