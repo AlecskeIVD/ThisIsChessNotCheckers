@@ -852,7 +852,13 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         elif version == 1:
             self.maximize_value()
         elif version == 2:
-            move = self.minmax(depth=3, maximise=(self.move % 2 == 1))[0]
+            if len(self.black_pieces) + len(self.white_pieces) <= 5:
+                depth = 4
+            elif len(self.black_pieces) + len(self.white_pieces) <= 16:
+                depth = 3
+            else:
+                depth = 2
+            move = self.minmax(depth=depth, maximise=(self.move % 2 == 1))[0]
             self.update(move)
         else:
             raise Exception

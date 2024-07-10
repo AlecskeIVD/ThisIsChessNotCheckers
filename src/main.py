@@ -3,11 +3,11 @@ from assets.constants import *
 from src.gamestate import Gamestate
 from time import sleep
 
-
 # INITIALISING WINDOW
 from src.pieces.bishop import Bishop
 from src.pieces.king import King
 from src.pieces.knight import Knight
+from src.pieces.pawn import Pawn
 from src.pieces.queen import Queen
 from src.pieces.rook import Rook
 
@@ -20,16 +20,17 @@ rgb_to_colour = {WHITE: "white", BLACK: "black"}
 index_to_column = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
 index_to_row = {}
 for row in range(8):
-    index_to_row[row] = 8-row
+    index_to_row[row] = 8 - row
 
 
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
     gs = Gamestate(load_images=True)
-    # gs = Gamestate([Knight(BP_WLKNIGHT, WHITE),
-    #                        Knight(BP_WRKNIGHT, WHITE), King(BP_WKING, WHITE)], [Knight(BP_BLKNIGHT, BLACK),
-    #                        Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)], load_images=True)
+    # gs = Gamestate([Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE),
+    #                Rook(BP_WRROOK, WHITE), Pawn((6, 7), WHITE)], [Knight(BP_BLKNIGHT, BLACK),
+    #                                                               Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)],
+    #               load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
@@ -71,15 +72,18 @@ def main(version: int = 0):
                         selected_piece = None
                     else:
                         if selected_piece.colour == WHITE:
-                            target_gs = Gamestate([piece for piece in gs.white_pieces if piece != selected_piece]+[target_piece], gs.black_pieces, gs.move+1)
+                            target_gs = Gamestate(
+                                [piece for piece in gs.white_pieces if piece != selected_piece] + [target_piece],
+                                gs.black_pieces, gs.move + 1)
                             if gs.is_legal(target_gs):
                                 gs.update(target_gs)
                             else:
                                 selected_piece = None
                         else:
                             target_gs = Gamestate(gs.white_pieces,
-                                [piece for piece in gs.black_pieces if piece != selected_piece] + [target_piece],
-                                gs.move + 1)
+                                                  [piece for piece in gs.black_pieces if piece != selected_piece] + [
+                                                      target_piece],
+                                                  gs.move + 1)
                             if gs.is_legal(target_gs):
                                 gs.update(target_gs)
                             else:
