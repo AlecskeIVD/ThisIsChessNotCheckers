@@ -22,6 +22,7 @@ class Gamestate:
                             Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE)]
             for i in range(COLUMNS):
                 white_pieces.append(Pawn((ROWS - 2, i), WHITE))
+            white_pieces.reverse()  # To promote pawn moves in opening
         self.white_pieces = white_pieces
         if not black_pieces:
             black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK), Knight(BP_BLKNIGHT, BLACK),
@@ -29,6 +30,8 @@ class Gamestate:
                             Queen(BP_BQUEEN, BLACK), King(BP_BKING, BLACK)]
             for i in range(COLUMNS):
                 black_pieces.append(Pawn((1, i), BLACK))
+            # To promote pawn moves in opening
+            black_pieces.reverse()
         self.black_pieces = black_pieces
         self.images = {}
         if load_images:
@@ -149,16 +152,47 @@ class Gamestate:
             return True
         return False
 
-
-
-
-
-    def legal_moves(self, colour) -> list['Gamestate']:
+    def legal_moves(self, colour, sort_by_heuristic=False) -> list['Gamestate']:
         """
-A function that returns ALL possible valid gamestates after colour makes a move
+A function that returns ALL possible valid gamestates after colour makes a move. If 'sort_by_heuristic' is True, moves
+will be ordered by captures, forward moves and ending with backwards moves
+        :param sort_by_heuristic:
         :param colour: WHITE or BLACK
         :return: list[Gamestate]
         """
+        if sort_by_heuristic:
+            captures, forward, backward = [], [], []
+            for move, moved_piece_old, moved_piece_new in self.generate_all_moves(colour, return_moved_pieces=True):
+                if self.is_legal(move):
+                    capture_flag = False
+                    if colour == WHITE:
+                        # CHECK FOR CAPTURE
+                        for piece in self.black_pieces:
+                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i - 1 and moved_piece_new.j == piece.j):
+                                captures.append(move)
+                                capture_flag = True
+                                break
+                        if not capture_flag:
+                            if moved_piece_old.i > moved_piece_new.i:
+                                # FORWARD MOVE
+                                forward.append(move)
+                            else:
+                                # BACKWARD MOVE
+                                backward.append(move)
+                    else:
+                        for piece in self.white_pieces:
+                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i + 1 and moved_piece_new.j == piece.j):
+                                captures.append(move)
+                                capture_flag = True
+                                break
+                        if not capture_flag:
+                            if moved_piece_old.i < moved_piece_new.i:
+                                # FORWARD MOVE
+                                forward.append(move)
+                            else:
+                                # BACKWARD MOVE
+                                backward.append(move)
+            return captures+forward+backward
         output = []
         for move in self.generate_all_moves(colour):
             if self.is_legal(move):
@@ -695,12 +729,29 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         # NO LEGAL VALUE
         return False
 
-    def generate_all_moves(self, colour):
+    def generate_all_moves(self, colour, return_moved_pieces=False):
         """
 A function that returns ALL possible gamestates after colour makes a move
+        :param return_moved_pieces: List to return the new Gamestate and the moved piece
         :param colour: WHITE or BLACK
-        :return: list[Gamestate]
+        :return: list[Gamestate] or list[(Gamestate, Piece)]
         """
+        if return_moved_pieces:
+            output = []
+            if colour == WHITE:
+                for piece in self.white_pieces:
+                    for new_possible_piece in piece.generate_possible_moves():
+                        new_gs = Gamestate([wp for wp in self.white_pieces if wp != piece] + [new_possible_piece],
+                                           self.black_pieces.copy(), self.move + 1)
+                        output.append((new_gs, piece, new_possible_piece))
+            elif colour == BLACK:
+                for piece in self.black_pieces:
+                    for new_possible_piece in piece.generate_possible_moves():
+                        new_gs = Gamestate(self.white_pieces.copy(),
+                                           [bp for bp in self.black_pieces if bp != piece] + [new_possible_piece],
+                                           self.move + 1)
+                        output.append((new_gs, piece, new_possible_piece))
+            return output
         output = []
         if colour == WHITE:
             for piece in self.white_pieces:
@@ -717,16 +768,18 @@ A function that returns ALL possible gamestates after colour makes a move
                     output.append(new_gs)
         return output
 
-    def update(self, target_gamestate: 'Gamestate'):
+    def update(self, target_gamestate: 'Gamestate', trust_me=False):
         """
 Updates this gamestate to make the move to 'transform to target_gamestate', while incrementing move counter,
 removing captured elements and restoring en-passantable values for pawns of colour that just made move
+        :param trust_me: Check to see if move is legal
         :param target_gamestate: desired gamestate
         """
         old_len_white = len(self.white_pieces)
         old_len_black = len(self.black_pieces)
-        if not self.is_legal(target_gamestate):
-            raise Exception
+        if not trust_me:
+            if not self.is_legal(target_gamestate):
+                raise Exception
         moved_piece_old = None
         moved_piece_new = None
         for piece in self.white_pieces:
@@ -799,7 +852,7 @@ removing captured elements and restoring en-passantable values for pawns of colo
             for row in range(col % 2, ROWS, 2):
                 pg.draw.rect(window, BEIGE, (row * SQUAREWIDTH, col * SQUAREWIDTH, SQUAREWIDTH, SQUAREWIDTH))
 
-        value_to_name = {1: "pawn", 3: "knight", 4: "bishop", 5: "rook", 8: "queen", 9: "king"}
+        value_to_name = {PAWN: "pawn", KNIGHT: "knight", BISHOP: "bishop", ROOK: "rook", QUEEN: "queen", KING: "king"}
         for piece in self.white_pieces:
             window.blit(self.images[value_to_name.get(piece.value) + "_white"],
                         (piece.j * SQUAREWIDTH, piece.i * SQUAREWIDTH))
@@ -857,9 +910,11 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             elif len(self.black_pieces) + len(self.white_pieces) <= 16:
                 depth = 3
             else:
-                depth = 2
+                depth = 3
             move = self.minmax(depth=depth, maximise=(self.move % 2 == 1))[0]
             self.update(move)
+        elif version == 3:
+            self.alpha_beta_search(4)
         else:
             raise Exception
 
@@ -966,22 +1021,73 @@ until depth is reached and simple move is chosen based on piece evaluation
                 return None, 0
             return best_move, best_value
 
+    def alpha_beta_search(self, max_depth):
+        """
+Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-beta-pruning for speedup
+        :param max_depth:
+        """
+        if self.move % 2 == 1:
+            # WHITE MAKES MOVE
+            value, chosen_move = self.alpha_beta_max(max_depth, float('-inf'), float('inf'))
+        else:
+            # BLACK MAKES MOVE
+            value, chosen_move = self.alpha_beta_min(max_depth, float('-inf'), float('inf'))
+        self.update(chosen_move)
+
+    def alpha_beta_max(self, depth: int, alpha: float, beta: float):
+        if depth == 0:
+            return self.evaluate(), None
+        moves = self.legal_moves(WHITE, sort_by_heuristic=True)
+        if len(moves) == 0:
+            if self.king_under_attack(WHITE):
+                # LOSE DUE TO CHECKMATE
+                return float('-inf'), None
+            # DRAW
+            return 0, None
+        value = float('-inf')
+        move = None
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True)
+            value2, turn2 = new_gs.alpha_beta_min(depth-1, alpha, beta)
+            if value2 > value:
+                value, move = value2, turn
+                alpha = max(alpha, value)
+            if value >= beta:
+                return value, move
+        return value, move
+
+    def alpha_beta_min(self, depth: int, alpha: float, beta: float):
+        if depth == 0:
+            return self.evaluate(), None
+        moves = self.legal_moves(BLACK, sort_by_heuristic=True)
+        if len(moves) == 0:
+            if self.king_under_attack(BLACK):
+                # LOSE DUE TO CHECKMATE
+                return float('inf'), None
+            # DRAW
+            return 0, None
+        value = float('inf')
+        move = None
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True)
+            value2, turn2 = new_gs.alpha_beta_max(depth - 1, alpha, beta)
+            if value2 < value:
+                value, move = value2, turn
+                beta = min(beta, value)
+            if value <= alpha:
+                return value, move
+        return value, move
+
     def evaluate(self) -> float:
         """
 A heuristic function to make a guess on evaluation of current position without relying on generating on all next moves
         """
         value = 0
         king_under_attack_value = 0.5
-        # if self.black_wins():
-        #     return float('-inf')
-        # if self.white_wins():
-        #     return float('inf')
-        # if self.stalemate():
-        #     return 0
-        for piece in self.white_pieces:
-            value += piece.value
-        for piece in self.black_pieces:
-            value -= piece.value
+        value += sum(piece.value for piece in self.white_pieces)
+        value -= sum(piece.value for piece in self.black_pieces)
 
         # promote checks
         if self.king_under_attack(BLACK):
