@@ -901,10 +901,13 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         :param version: chooses which version decides next move
         """
         if version == 0:
+            # SUCKS BUT IS FAST
             self.random_move()
         elif version == 1:
+            # SUCKS A LITTLE LESS AND STILL FAST, BUT CAN'T SEE AHEAD
             self.maximize_value()
         elif version == 2:
+            # SEES AHEAD BETTER BUT IS SLOW
             if len(self.black_pieces) + len(self.white_pieces) <= 5:
                 depth = 4
             elif len(self.black_pieces) + len(self.white_pieces) <= 16:
@@ -914,7 +917,9 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             move = self.minmax(depth=depth, maximise=(self.move % 2 == 1))[0]
             self.update(move)
         elif version == 3:
+            # CAN SEE BETTER AHEAD AND IS FASTER, BUT HAS TROUBLE CHECKMATING
             self.alpha_beta_search(4)
+            # CURRENTLY, BEST VERSION WOULD BE ALPHA_BETA_SEARCH() WITH OPENING KNOWLEDGE AND ENDGAME KNOWLEDGE
         else:
             raise Exception
 
@@ -936,54 +941,27 @@ values of pieces of other colour
         if self.move % 2 == 1:
             lm = self.legal_moves(WHITE)
             for move in lm:
-                value = 0
-                moved_piece = None
-                for piece in move.white_pieces:
-                    value += piece.value
-                    if piece not in self.white_pieces:
-                        moved_piece = piece
-                if best_value is None or best_value < value:
-                    for piece in move.black_pieces:
-                        if (piece.i != moved_piece.i or piece.j != moved_piece.j) and not (moved_piece.value == PAWN and
-                                                                                           piece.value == PAWN and
-                                                                                           piece.en_passantable and
-                                                                                           piece.j == moved_piece.j
-                                                                                           and piece.i - 1 ==
-                                                                                           moved_piece.i):
-                            value -= piece.value
-                    if best_value is None or best_value < value:
-                        best_moves = [move]
-                        best_value = value
-                    elif best_value == value:
-                        best_moves.append(move)
-            chosen_move = best_moves[randint(0, len(best_moves) - 1)]
-            self.update(chosen_move)
-
+                new_gs = self.deep_copy()
+                new_gs.update(move, trust_me=True)
+                value = new_gs.evaluate(account_for_draw=True)
+                if best_value is None or value > best_value:
+                    best_moves = [move]
+                    best_value = value
+                elif best_value == value:
+                    best_moves.append(move)
         else:
             lm = self.legal_moves(BLACK)
             for move in lm:
-                value = 0
-                moved_piece = None
-                for piece in move.black_pieces:
-                    value += piece.value
-                    if piece not in self.black_pieces:
-                        moved_piece = piece
-                if best_value is None or best_value < value:
-                    for piece in move.white_pieces:
-                        if (piece.i != moved_piece.i or piece.j != moved_piece.j) and (moved_piece.value != PAWN or
-                                                                                       piece.value != PAWN or
-                                                                                       not piece.en_passantable or
-                                                                                       piece.j != moved_piece.j
-                                                                                       or piece.i + 1 !=
-                                                                                       moved_piece.i):
-                            value -= piece.value
-                    if best_value is None or best_value < value:
-                        best_moves = [move]
-                        best_value = value
-                    elif best_value == value:
-                        best_moves.append(move)
-            chosen_move = best_moves[randint(0, len(best_moves) - 1)]
-            self.update(chosen_move)
+                new_gs = self.deep_copy()
+                new_gs.update(move, trust_me=True)
+                value = new_gs.evaluate(account_for_draw=True)
+                if best_value is None or value < best_value:
+                    best_moves = [move]
+                    best_value = value
+                elif best_value == value:
+                    best_moves.append(move)
+        chosen_move = best_moves[randint(0, len(best_moves) - 1)]
+        self.update(chosen_move)
 
     def minmax(self, depth: int, maximise: bool) -> ('Gamestate', int):
         """
@@ -1032,7 +1010,12 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         else:
             # BLACK MAKES MOVE
             value, chosen_move = self.alpha_beta_min(max_depth, float('-inf'), float('inf'))
-        self.update(chosen_move)
+        if chosen_move is None:
+            # Every move leads to same checkmate
+            self.maximize_value()
+        else:
+            # Found a move
+            self.update(chosen_move)
 
     def alpha_beta_max(self, depth: int, alpha: float, beta: float):
         if depth == 0:
@@ -1080,26 +1063,32 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
                 return value, move
         return value, move
 
-    def evaluate(self) -> float:
+    def evaluate(self, account_for_draw=False) -> float:
         """
 A heuristic function to make a guess on evaluation of current position without relying on generating on all next moves
         """
         value = 0
         king_under_attack_value = 0.5
-        value += sum(piece.value for piece in self.white_pieces)
-        value -= sum(piece.value for piece in self.black_pieces)
-
         # promote checks
-        if self.king_under_attack(BLACK):
-            if self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0:
+        kuab = self.king_under_attack(BLACK)
+        kuaw = self.king_under_attack(WHITE)
+        if account_for_draw and self.stalemate():
+            return 0
+        if kuab:
+            lmb = self.legal_moves(BLACK)
+            if self.move % 2 == 0 and len(lmb) == 0:
                 # WHITE WINS
                 return float('inf')
             value += king_under_attack_value
-        if self.king_under_attack(WHITE):
-            if self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0:
+        if kuaw:
+            lmw = self.legal_moves(WHITE)
+            if self.move % 2 == 1 and len(lmw) == 0:
                 # BLACK WINS
                 return float('-inf')
             value -= king_under_attack_value
+
+        value += sum(piece.value for piece in self.white_pieces)
+        value -= sum(piece.value for piece in self.black_pieces)
         return value
 
 
