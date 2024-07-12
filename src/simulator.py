@@ -1,3 +1,4 @@
+from src.Openings.openingtree import Tree
 from src.gamestate import Gamestate
 
 

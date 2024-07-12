@@ -1,3 +1,4 @@
+import re
 from random import randint
 
 from assets.constants import *
@@ -1109,3 +1110,4 @@ def opposite(colour):
     if colour == WHITE:
         return BLACK
     return WHITE
+

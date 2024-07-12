@@ -15,7 +15,7 @@ WINDOW = pg.display.set_mode((WIDTH, HEIGHT))
 pg.display.set_caption("Chess")
 
 # Dictionaries for translating pieces to human-readable names
-value_to_name = {1: "pawn", 3: "knight", 4: "bishop", 5: "rook", 8: "queen", 9: "king"}
+value_to_name = {PAWN: "pawn", KNIGHT: "knight", BISHOP: "bishop", ROOK: "rook", QUEEN: "queen", KING: "king"}
 rgb_to_colour = {WHITE: "white", BLACK: "black"}
 index_to_column = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
 index_to_row = {}
@@ -26,11 +26,11 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    # gs = Gamestate(load_images=True)
-    gs = Gamestate([Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE),
-                   Rook(BP_WRROOK, WHITE), Pawn((6, 7), WHITE)], [Knight(BP_BLKNIGHT, BLACK),
-                                                                   Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)],
-                   load_images=True)
+    gs = Gamestate(load_images=True)
+    # gs = Gamestate([Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE),
+    #                Rook(BP_WRROOK, WHITE), Pawn((6, 7), WHITE)], [Knight(BP_BLKNIGHT, BLACK),
+    #                                                                Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)],
+    #                load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
