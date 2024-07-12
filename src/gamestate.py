@@ -1185,8 +1185,8 @@ A heuristic function to make a guess on evaluation of current position without r
                     if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
                         return move
             elif move_str[0] == "B":
-                white_pieces = [piece for piece in self.white_pieces if piece.value != BISHOP or piece.i + piece.j % 2
-                                != row_to_index[move_str[-1]] + column_to_index[move_str[-2]] % 2] + [
+                white_pieces = [piece for piece in self.white_pieces if piece.value != BISHOP or (piece.i + piece.j) % 2
+                                != (row_to_index[move_str[-1]] + column_to_index[move_str[-2]]) % 2] + [
                                    Bishop((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE)]
                 new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
                 return new_gs
@@ -1251,8 +1251,8 @@ A heuristic function to make a guess on evaluation of current position without r
                     if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
                         return move
             elif move_str[0] == "B":
-                black_pieces = [piece for piece in self.black_pieces if piece.value != BISHOP or piece.i + piece.j % 2
-                                != row_to_index[move_str[-1]] + column_to_index[move_str[-2]] % 2] + [
+                black_pieces = [piece for piece in self.black_pieces if piece.value != BISHOP or (piece.i + piece.j) % 2
+                                != (row_to_index[move_str[-1]] + column_to_index[move_str[-2]]) % 2] + [
                                    Bishop((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK)]
                 new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
                 return new_gs
