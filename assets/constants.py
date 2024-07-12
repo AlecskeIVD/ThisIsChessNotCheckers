@@ -49,3 +49,13 @@ BP_BLROOK = (0, 7)
 BP_BRROOK = (0, 0)
 BP_BQUEEN = (0, 3)
 BP_BKING = (0, 4)
+
+# TRANSLATION DICTIONARIES
+index_to_column = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
+index_to_row = {}
+for row in range(8):
+    index_to_row[row] = str(8 - row)
+column_to_index = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
+row_to_index = {}
+for row in range(1, 9):
+    row_to_index[str(row)] = 8-row

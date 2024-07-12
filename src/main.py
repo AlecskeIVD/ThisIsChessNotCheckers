@@ -1,5 +1,6 @@
 import pygame as pg
 from assets.constants import *
+from src.Openings.openingtree import Tree
 from src.gamestate import Gamestate
 from time import sleep
 
@@ -27,6 +28,8 @@ def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
     gs = Gamestate(load_images=True)
+    openingTree = Tree()
+
     # gs = Gamestate([Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE),
     #                Rook(BP_WRROOK, WHITE), Pawn((6, 7), WHITE)], [Knight(BP_BLKNIGHT, BLACK),
     #                                                                Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)],
@@ -41,7 +44,7 @@ def main(version: int = 0):
             if event.type == pg.QUIT:
                 run = False
             if event.type == pg.KEYDOWN:
-                gs.computer_makes_move(version)
+                gs.computer_makes_move(version, openingTree)
                 gs.draw_board(WINDOW)
                 pg.display.update()
                 if gs.white_wins():

@@ -16,4 +16,6 @@ Generates a list of new Piece-objects that correspond to all possible moves a pi
         pass
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.i == other.i and self.j == other.j and self.colour == other.colour and self.value == other.value

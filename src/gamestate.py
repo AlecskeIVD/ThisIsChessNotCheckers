@@ -9,6 +9,7 @@ from pieces.bishop import Bishop
 from pieces.king import King
 from pieces.knight import Knight
 from pieces.queen import Queen
+from src.Openings.openingtree import Tree
 
 
 class Gamestate:
@@ -50,6 +51,7 @@ class Gamestate:
                     (SQUAREWIDTH, SQUAREWIDTH))
         self.move = move
         self.last_non_drawing_turn = last_non_drawing_turn
+        self.moves = ""
 
     def get_piece(self, i, j, colour=None):
         if colour is None:
@@ -80,12 +82,12 @@ class Gamestate:
         return False
 
     def stalemate(self):
-        if(self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
-               (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK)):
+        if (self.move % 2 == 1 and len(self.legal_moves(WHITE)) == 0 and not self.king_under_attack(WHITE)) or \
+                (self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and not self.king_under_attack(BLACK)):
             return True
 
         # 50 MOVE RULE
-        if self.move-self.last_non_drawing_turn >= 100:
+        if self.move - self.last_non_drawing_turn >= 100:
             return True
 
         # CHECK FOR INSUFFICIENT MATERIAL
@@ -169,7 +171,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                     if colour == WHITE:
                         # CHECK FOR CAPTURE
                         for piece in self.black_pieces:
-                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i - 1 and moved_piece_new.j == piece.j):
+                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (
+                                    piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i - 1 and moved_piece_new.j == piece.j):
                                 captures.append(move)
                                 capture_flag = True
                                 break
@@ -182,7 +185,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 backward.append(move)
                     else:
                         for piece in self.white_pieces:
-                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i + 1 and moved_piece_new.j == piece.j):
+                            if (piece.i == moved_piece_new.i and piece.j == moved_piece_new.j) or (
+                                    piece.value == moved_piece_new.value == PAWN and piece.en_passantable and moved_piece_new.i == piece.i + 1 and moved_piece_new.j == piece.j):
                                 captures.append(move)
                                 capture_flag = True
                                 break
@@ -193,7 +197,7 @@ will be ordered by captures, forward moves and ending with backwards moves
                             else:
                                 # BACKWARD MOVE
                                 backward.append(move)
-            return captures+forward+backward
+            return captures + forward + backward
         output = []
         for move in self.generate_all_moves(colour):
             if self.is_legal(move):
@@ -313,14 +317,25 @@ Checks if the king of team 'colour' is in check
         # Check if a pawn can attack king
         if (king.colour == WHITE and (
                 (piece_top_left is not None and piece_top_left.colour == BLACK and piece_top_left.value == PAWN and
-                 self.get_piece(king.i - 1, king.j - 1, colour) is None and not (piece_top_left.en_passantable and self.get_piece(king.i - 2, king.j - 1, colour) is not None)) or (
+                 self.get_piece(king.i - 1, king.j - 1, colour) is None and not (
+                                piece_top_left.en_passantable and self.get_piece(king.i - 2, king.j - 1,
+                                                                                 colour) is not None)) or (
                         piece_top_right is not None and piece_top_right.colour == BLACK and piece_top_right.value ==
-                        PAWN and self.get_piece(king.i - 1, king.j + 1, colour) is None and not (piece_top_right.en_passantable and self.get_piece(king.i - 2, king.j + 1, colour) is not None)))) or \
-                (king.colour == BLACK and ((piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(
-                                               king.i + 1, king.j - 1, colour) is None and not (piece_bottom_left.en_passantable and self.get_piece(king.i + 2, king.j - 1, colour) is not None)) or (
+                        PAWN and self.get_piece(king.i - 1, king.j + 1, colour) is None and not (
+                        piece_top_right.en_passantable and self.get_piece(king.i - 2, king.j + 1,
+                                                                          colour) is not None)))) or \
+                (king.colour == BLACK and ((
+                                                   piece_bottom_left is not None and piece_bottom_left.colour == WHITE and piece_bottom_left.value == PAWN and self.get_piece(
+                                               king.i + 1, king.j - 1, colour) is None and not (
+                                                   piece_bottom_left.en_passantable and self.get_piece(king.i + 2,
+                                                                                                       king.j - 1,
+                                                                                                       colour) is not None)) or (
                                                    piece_bottom_right is not None and piece_bottom_right.colour == WHITE
                                                    and piece_bottom_right.value == PAWN and
-                                                   self.get_piece(king.i + 1, king.j + 1, colour) is None and not (piece_bottom_right.en_passantable and self.get_piece(king.i + 2, king.j + 1 , colour) is not None)))):
+                                                   self.get_piece(king.i + 1, king.j + 1, colour) is None and not (
+                                                   piece_bottom_right.en_passantable and self.get_piece(king.i + 2,
+                                                                                                        king.j + 1,
+                                                                                                        colour) is not None)))):
             return True
 
         # Check if a knight can attack king
@@ -527,7 +542,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                 return True
             else:
                 # Went to top left
-                for n in range(1, moved_piece_old.i-moved_piece_new.i):
+                for n in range(1, moved_piece_old.i - moved_piece_new.i):
                     if self.get_piece(moved_piece_old.i - n, moved_piece_old.j - n) is not None:
                         return False
                 return True
@@ -769,7 +784,7 @@ A function that returns ALL possible gamestates after colour makes a move
                     output.append(new_gs)
         return output
 
-    def update(self, target_gamestate: 'Gamestate', trust_me=False):
+    def update(self, target_gamestate: 'Gamestate', trust_me=False, update_string=True):
         """
 Updates this gamestate to make the move to 'transform to target_gamestate', while incrementing move counter,
 removing captured elements and restoring en-passantable values for pawns of colour that just made move
@@ -840,11 +855,49 @@ removing captured elements and restoring en-passantable values for pawns of colo
                         self.black_pieces.remove(piece)
                     else:
                         piece.en_passantable = False
-        if len(self.white_pieces) != old_len_white or len(self.black_pieces) != old_len_black or \
+        capture = len(self.white_pieces) != old_len_white or len(self.black_pieces) != old_len_black
+        if capture or \
                 moved_piece_old.value == PAWN:
             # UPDATE LAST_NON_DRAWING_TURN IF CAPTURE OR PAWN MOVE
             self.last_non_drawing_turn = self.move
         self.move += 1
+        if update_string:
+            if moved_piece_new.value == KING:
+                if moved_piece_new.j - moved_piece_old.j == 2:
+                    self.moves += "O-O "
+                elif moved_piece_new.j - moved_piece_old.j == -2:
+                    self.moves += "O-O-O "
+                else:
+                    if capture:
+                        self.moves += "Kx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+                    else:
+                        self.moves += "K" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+            elif moved_piece_old.value == PAWN:
+                if capture:
+                    self.moves += index_to_column[moved_piece_old.j] + "x" + index_to_column[moved_piece_new.j] + \
+                                  index_to_row[moved_piece_new.i] + " "
+                else:
+                    self.moves += index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+            elif moved_piece_old.value == ROOK:
+                if capture:
+                    self.moves += "Rx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+                else:
+                    self.moves += "R" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+            elif moved_piece_old.value == QUEEN:
+                if capture:
+                    self.moves += "Qx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+                else:
+                    self.moves += "Q" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+            elif moved_piece_old.value == KNIGHT:
+                if capture:
+                    self.moves += "Nx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+                else:
+                    self.moves += "N" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+            elif moved_piece_old.value == BISHOP:
+                if capture:
+                    self.moves += "Bx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+                else:
+                    self.moves += "B" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
 
     def draw_board(self, window):
         # Draw Board
@@ -896,9 +949,10 @@ Returns a copy of a gamestate where every piece is a copy of one of the pieces o
                 new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
         return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn)
 
-    def computer_makes_move(self, version: int):
+    def computer_makes_move(self, version: int, tree: Tree = None):
         """
 Updates 'self' to new gamestate where computer made move, based on 'version'
+        :param tree: Tree for opening if necesarry
         :param version: chooses which version decides next move
         """
         if version == 0:
@@ -921,6 +975,18 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             # CAN SEE BETTER AHEAD AND IS FASTER, BUT HAS TROUBLE CHECKMATING
             self.alpha_beta_search(4)
             # CURRENTLY, BEST VERSION WOULD BE ALPHA_BETA_SEARCH() WITH OPENING KNOWLEDGE AND ENDGAME KNOWLEDGE
+        elif version == 4:
+            if self.move <= 12:
+                move_str = self.opening_move(tree)
+                print(move_str)
+                if move_str is None:
+                    self.alpha_beta_search(4)
+                else:
+                    move = self.translate(move_str)
+                    self.update(move)
+            else:
+                self.alpha_beta_search(4)
+
         else:
             raise Exception
 
@@ -982,7 +1048,7 @@ until depth is reached and simple move is chosen based on piece evaluation
                 new_gs = self.deep_copy()
                 new_gs.update(move)
                 # If we want to maximise, opponent wants to minimise and vice versa
-                new_move, value = new_gs.minmax(depth=depth-1, maximise=not maximise)
+                new_move, value = new_gs.minmax(depth=depth - 1, maximise=not maximise)
                 if maximise:
                     if best_value is None or value > best_value:
                         best_value = value
@@ -1032,8 +1098,8 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         move = None
         for turn in moves:
             new_gs = self.deep_copy()
-            new_gs.update(turn, trust_me=True)
-            value2, turn2 = new_gs.alpha_beta_min(depth-1, alpha, beta)
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, turn2 = new_gs.alpha_beta_min(depth - 1, alpha, beta)
             if value2 > value:
                 value, move = value2, turn
                 alpha = max(alpha, value)
@@ -1055,7 +1121,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         move = None
         for turn in moves:
             new_gs = self.deep_copy()
-            new_gs.update(turn, trust_me=True)
+            new_gs.update(turn, trust_me=True, update_string=False)
             value2, turn2 = new_gs.alpha_beta_max(depth - 1, alpha, beta)
             if value2 < value:
                 value, move = value2, turn
@@ -1092,6 +1158,148 @@ A heuristic function to make a guess on evaluation of current position without r
         value -= sum(piece.value for piece in self.black_pieces)
         return value
 
+    def opening_move(self, tree: Tree) -> str or None:
+        next_known_moves = tree.getNextMoves(self.moves)
+        if next_known_moves is None:
+            return None
+        chosen = next_known_moves[randint(0, len(next_known_moves) - 1)]
+        return chosen
+
+    def translate(self, move_str: str) -> 'Gamestate':
+        # ASSUME EARLY POSITION SO NO PROMOTIONS YET
+        if self.move % 2 == 1:
+            # WHITE MOVE
+            if move_str[0] == "K":
+                white_pieces = [piece for piece in self.white_pieces if piece.value != KING] + [
+                    King((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE, True)]
+                new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "Q":
+                white_pieces = [piece for piece in self.white_pieces if piece.value != QUEEN] + [
+                    Queen((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE)]
+                new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "R":
+                for move in self.legal_moves(WHITE):
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], WHITE)
+                    if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
+                        return move
+            elif move_str[0] == "B":
+                white_pieces = [piece for piece in self.white_pieces if piece.value != BISHOP or piece.i + piece.j % 2
+                                != row_to_index[move_str[-1]] + column_to_index[move_str[-2]] % 2] + [
+                                   Bishop((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE)]
+                new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "N":
+                for move in self.legal_moves(WHITE):
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], WHITE)
+                    if possible_moved_piece is not None and possible_moved_piece.value == KNIGHT:
+                        return move
+            elif move_str == "O-O":
+                white_pieces = [piece for piece in self.white_pieces if piece.value != KING] + [
+                    King((7, 6), WHITE, True)]
+                new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str == "O-O-O":
+                white_pieces = [piece for piece in self.white_pieces if piece.value != KING] + [
+                    King((7, 2), WHITE, True)]
+                new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            else:
+                if len(move_str) == 2:
+                    moved_pawn = None
+                    double_jump = False
+                    for piece in self.white_pieces:
+                        if piece.value == PAWN and piece.j == column_to_index[move_str[-2]] and (
+                                piece.i == row_to_index[move_str[-1]] + 1 or (
+                                piece.i == row_to_index[move_str[-1]] + 2 and self.get_piece(piece.i - 1, piece.j) is None)):
+                            moved_pawn = piece
+                            if piece.i == row_to_index[move_str[-1]] + 2:
+                                double_jump = True
+                    white_pieces = [piece for piece in self.white_pieces if piece != moved_pawn] + \
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE, double_jump)]
+                    new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                       self.last_non_drawing_turn)
+                    return new_gs
+                else:
+                    # capture
+                    moved_pawn = None
+                    for piece in self.white_pieces:
+                        if piece.value == PAWN and piece.j == column_to_index[move_str[0]] and piece.i == row_to_index[move_str[-1]] + 1:
+                            moved_pawn = piece
+                    white_pieces = [piece for piece in self.white_pieces if piece != moved_pawn] + \
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE,
+                                         False)]
+                    new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                       self.last_non_drawing_turn)
+                    return new_gs
+        else:
+            # BLACK MOVE
+            if move_str[0] == "K":
+                black_pieces = [piece for piece in self.black_pieces if piece.value != KING] + [
+                    King((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK, True)]
+                new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "Q":
+                black_pieces = [piece for piece in self.black_pieces if piece.value != QUEEN] + [
+                    Queen((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK)]
+                new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "R":
+                for move in self.legal_moves(BLACK):
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], BLACK)
+                    if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
+                        return move
+            elif move_str[0] == "B":
+                black_pieces = [piece for piece in self.black_pieces if piece.value != BISHOP or piece.i + piece.j % 2
+                                != row_to_index[move_str[-1]] + column_to_index[move_str[-2]] % 2] + [
+                                   Bishop((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK)]
+                new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str[0] == "N":
+                for move in self.legal_moves(BLACK):
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], BLACK)
+                    if possible_moved_piece is not None and possible_moved_piece.value == KNIGHT:
+                        return move
+            elif move_str == "O-O":
+                black_pieces = [piece for piece in self.black_pieces if piece.value != KING] + [
+                    King((0, 6), BLACK, True)]
+                new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            elif move_str == "O-O-O":
+                black_pieces = [piece for piece in self.black_pieces if piece.value != KING] + [
+                    King((0, 2), BLACK, True)]
+                new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                return new_gs
+            else:
+                if len(move_str) == 2:
+                    moved_pawn = None
+                    double_jump = False
+                    for piece in self.black_pieces:
+                        if piece.value == PAWN and piece.j == column_to_index[move_str[-2]] and (
+                                piece.i == row_to_index[move_str[-1]] - 1 or (
+                                piece.i == row_to_index[move_str[-1]] - 2 and self.get_piece(piece.i + 1, piece.j) is None)):
+                            moved_pawn = piece
+                            if piece.i == row_to_index[move_str[-1]] - 2:
+                                double_jump = True
+                    black_pieces = [piece for piece in self.black_pieces if piece != moved_pawn] + \
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK, double_jump)]
+                    new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                       self.last_non_drawing_turn)
+                    return new_gs
+                else:
+                    moved_pawn = None
+                    for piece in self.black_pieces:
+                        if piece.value == PAWN and piece.j == column_to_index[move_str[0]] and piece.i == row_to_index[
+                                move_str[-1]] - 1:
+                            moved_pawn = piece
+                    black_pieces = [piece for piece in self.black_pieces if piece != moved_pawn] + \
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK,
+                                         False)]
+                    new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                       self.last_non_drawing_turn)
+                    return new_gs
+
 
 def convert_black_to_white(image):
     white_image = image.copy()
@@ -1110,4 +1318,3 @@ def opposite(colour):
     if colour == WHITE:
         return BLACK
     return WHITE
-

@@ -23,11 +23,12 @@ class Tree:
         :param moves: The moves in order, split by a space, to get next known moves
         """
         node = self.root
-        for move in moves:
-            node = node.getChild(move)
-            if node is None:
-                return None
-        return node.children.keys()
+        for move in moves.split(" "):
+            if move != "":
+                node = node.getChild(move)
+                if node is None:
+                    return None
+        return list(node.children.keys())
 
 
 def get_moves(content):
