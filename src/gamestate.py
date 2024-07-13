@@ -1,5 +1,6 @@
 import re
 from random import randint
+from time import time
 
 from assets.constants import *
 import pygame as pg
@@ -978,7 +979,7 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         elif version == 4:
             if self.move <= 12:
                 move_str = self.opening_move(tree)
-                print(move_str)
+                # print(move_str)
                 if move_str is None:
                     self.alpha_beta_search(4)
                 else:
@@ -987,6 +988,17 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             else:
                 self.alpha_beta_search(4)
 
+        elif version == 5:
+            if self.move <= 12:
+                move_str = self.opening_move(tree)
+                # print(move_str)
+                if move_str is None:
+                    self.iterative_deepening()
+                else:
+                    move = self.translate(move_str)
+                    self.update(move)
+            else:
+                self.iterative_deepening()
         else:
             raise Exception
 
@@ -1300,6 +1312,78 @@ A heuristic function to make a guess on evaluation of current position without r
                                        self.last_non_drawing_turn)
                     return new_gs
 
+    def iterative_deepening(self):
+        start_time = time()
+        best_move = None
+        depth = 1
+        ordered_moves = None
+
+        while time()-start_time<1:
+            if self.move % 2 == 1:
+                # WHITE'S TURN
+                _, ordered_moves = self.alpha_beta_max_all(depth, float('-inf'), float('inf'), ordered_moves)
+            else:
+                # BLACK'S TURN
+                _, ordered_moves = self.alpha_beta_min_all(depth, float('-inf'), float('inf'), ordered_moves)
+            depth += 1
+        if ordered_moves:
+            self.update(ordered_moves[0][1])
+        else:
+            raise Exception
+
+    def alpha_beta_max_all(self, depth: int, alpha: float, beta: float, ordered_moves=None):
+        if depth == 0:
+            return self.evaluate(), None
+
+        if ordered_moves is None:
+            moves = list(self.legal_moves(WHITE, sort_by_heuristic=True))
+        else:
+            moves = [move[1] for move in ordered_moves]
+        if len(moves) == 0:
+            if self.king_under_attack(WHITE):
+                return float('-inf'), None  # Lose due to checkmate
+            return 0, None  # Draw
+
+        move_values = []
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, _ = new_gs.alpha_beta_min_all(depth - 1, alpha, beta)
+            move_values.append((value2, turn))
+            if value2 > alpha:
+                alpha = value2
+            if alpha >= beta:
+                break
+
+        move_values.sort(key=lambda x: x[0], reverse=True)
+        return move_values[0][0], move_values
+
+    def alpha_beta_min_all(self, depth: int, alpha: float, beta: float, ordered_moves=None):
+        if depth == 0:
+            return self.evaluate(), None
+
+        if ordered_moves is None:
+            moves = list(self.legal_moves(BLACK, sort_by_heuristic=True))
+        else:
+            moves = [move[1] for move in ordered_moves]
+        if len(moves) == 0:
+            if self.king_under_attack(BLACK):
+                return float('inf'), None  # Lose due to checkmate
+            return 0, None  # Draw
+
+        move_values = []
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, _ = new_gs.alpha_beta_max(depth - 1, alpha, beta)
+            move_values.append((value2, turn))
+            if value2 < beta:
+                beta = value2
+            if beta <= alpha:
+                break
+
+        move_values.sort(key=lambda x: x[0])
+        return move_values[0][0], move_values
 
 def convert_black_to_white(image):
     white_image = image.copy()
