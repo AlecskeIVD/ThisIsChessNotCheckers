@@ -1,4 +1,3 @@
-import re
 from random import randint
 from time import time
 
@@ -11,6 +10,17 @@ from pieces.king import King
 from pieces.knight import Knight
 from pieces.queen import Queen
 from src.Openings.openingtree import Tree
+
+
+
+def mop_up_eval(white_material_value: int, black_material_value: int, white_king: King, black_king: King, endgame_weight: float):
+    PawnValue = 100
+    # As game transitions to endgame, and if up material, then encourage moving king closer to opponent king
+    if white_material_value > black_material_value + 2*PawnValue and endgame_weight > 0:
+        return int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
+    elif white_material_value < black_material_value - 2*PawnValue and endgame_weight > 0:
+        return int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
+    return 0
 
 
 class Gamestate:
@@ -979,19 +989,17 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
         elif version == 4:
             if self.move <= 12:
                 move_str = self.opening_move(tree)
-                # print(move_str)
                 if move_str is None:
-                    self.alpha_beta_search(4)
+                    self.alpha_beta_search(3)
                 else:
                     move = self.translate(move_str)
                     self.update(move)
             else:
-                self.alpha_beta_search(4)
+                self.alpha_beta_search(3)
 
         elif version == 5:
             if self.move <= 12:
                 move_str = self.opening_move(tree)
-                # print(move_str)
                 if move_str is None:
                     self.iterative_deepening()
                 else:
@@ -1022,7 +1030,7 @@ values of pieces of other colour
             for move in lm:
                 new_gs = self.deep_copy()
                 new_gs.update(move, trust_me=True)
-                value = new_gs.evaluate(account_for_draw=True)
+                value = new_gs.evaluate_better()
                 if best_value is None or value > best_value:
                     best_moves = [move]
                     best_value = value
@@ -1141,6 +1149,82 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             if value <= alpha:
                 return value, move
         return value, move
+
+    def evaluate_better(self):
+        black_king = None
+        white_king = None
+        output = 0
+
+        KnightValue = 300
+        KnightValues = [[75.0, 112.5, 150.0, 150.0, 150.0, 150.0, 112.5, 75.0],
+                        [112.5, 150.0, 225.0, 225.0, 225.0, 225.0, 150.0, 112.5],
+                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
+                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
+                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
+                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
+                        [112.5, 150.0, 225.0, 225.0, 225.0, 225.0, 150.0, 112.5],
+                        [75.0, 112.5, 150.0, 150.0, 150.0, 150.0, 112.5, 75.0]]
+        BishopValue = 320
+        RookValue = 500
+        QueenValue = 900
+        PawnValue = 100
+        endgameMaterialStart = RookValue * 2 + BishopValue + KnightValue
+        white_pawns = []
+        white_pawn_positions = {}
+        white_bishops = []
+        white_rooks = []
+        white_queens = []
+        white_knights = []
+        black_pawns = []
+        black_pawn_positions = {}
+        black_bishops = []
+        black_rooks = []
+        black_queens = []
+        black_knights = []
+        for piece in self.white_pieces:
+            if piece.value == PAWN:
+                white_pawns.append(piece)
+                white_pawn_positions[piece.j] = white_pawn_positions.get(piece.j, []) + [piece.i]
+            elif piece.value == BISHOP:
+                white_bishops.append(piece)
+            elif piece.value == KNIGHT:
+                white_knights.append(piece)
+                output += KnightValues[piece.i][piece.j]
+            elif piece.value == ROOK:
+                white_rooks.append(piece)
+            elif piece.value == QUEEN:
+                white_queens.append(piece)
+            else:
+                white_king = piece
+        for piece in self.black_pieces:
+            if piece.value == PAWN:
+                black_pawns.append(piece)
+                black_pawn_positions[piece.j] = black_pawn_positions.get(piece.j, []) + [piece.i]
+            elif piece.value == BISHOP:
+                black_bishops.append(piece)
+            elif piece.value == KNIGHT:
+                black_knights.append(piece)
+                output -= KnightValues[piece.i][piece.j]
+            elif piece.value == ROOK:
+                black_rooks.append(piece)
+            elif piece.value == QUEEN:
+                black_queens.append(piece)
+            else:
+                black_king = piece
+        if self.move % 2 == 0:
+            opponentMaterialCountWithoutPawns = len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue
+        else:
+            opponentMaterialCountWithoutPawns = len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
+                black_knights) * KnightValue
+        endgameWeight = 1 - min(1.0, opponentMaterialCountWithoutPawns / endgameMaterialStart)
+        output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
+        output += (len(white_bishops) - len(black_bishops))*BishopValue
+        output += (len(white_queens) - len(black_queens)) * QueenValue
+        output += (len(white_rooks) - len(black_rooks)) * RookValue
+        output += mop_up_eval(len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue + len(white_pawns)*PawnValue, len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
+                black_knights) * KnightValue + len(black_pawns)*PawnValue, white_king, black_king, endgameWeight)
+        output += self.king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight)
+        return output
 
     def evaluate(self, account_for_draw=False) -> float:
         """
@@ -1319,6 +1403,7 @@ A heuristic function to make a guess on evaluation of current position without r
         ordered_moves = None
 
         while time()-start_time<1:
+            print(depth)
             if self.move % 2 == 1:
                 # WHITE'S TURN
                 _, ordered_moves = self.alpha_beta_max_all(depth, float('-inf'), float('inf'), ordered_moves)
@@ -1333,7 +1418,7 @@ A heuristic function to make a guess on evaluation of current position without r
 
     def alpha_beta_max_all(self, depth: int, alpha: float, beta: float, ordered_moves=None):
         if depth == 0:
-            return self.evaluate(), None
+            return self.evaluate_better(), None
 
         if ordered_moves is None:
             moves = list(self.legal_moves(WHITE, sort_by_heuristic=True))
@@ -1360,7 +1445,7 @@ A heuristic function to make a guess on evaluation of current position without r
 
     def alpha_beta_min_all(self, depth: int, alpha: float, beta: float, ordered_moves=None):
         if depth == 0:
-            return self.evaluate(), None
+            return self.evaluate_better(), None
 
         if ordered_moves is None:
             moves = list(self.legal_moves(BLACK, sort_by_heuristic=True))
@@ -1384,6 +1469,62 @@ A heuristic function to make a guess on evaluation of current position without r
 
         move_values.sort(key=lambda x: x[0])
         return move_values[0][0], move_values
+
+    def king_pawn_shield(self, white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight):
+        if endgameWeight >= 0.9:
+            return 0
+        weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.9, 1.3, 1]
+        kingSafetyValue = 200
+        output = 0
+        # Check safety of white king
+        if white_king.i+1 in white_pawn_positions.get(white_king.j, []):
+            kingSafetyValue += 40
+        if white_king.i+1 in white_pawn_positions.get(white_king.j-1, []):
+            kingSafetyValue += 30
+        if white_king.i+1 in white_pawn_positions.get(white_king.j+1, []):
+            kingSafetyValue += 30
+        output += kingSafetyValue * weights[white_king.j]
+        if black_king.i-1 in black_pawn_positions.get(black_king.j, []):
+            kingSafetyValue += 40
+        if black_king.i-1 in black_pawn_positions.get(black_king.j-1, []):
+            kingSafetyValue += 30
+        if black_king.i-1 in black_pawn_positions.get(black_king.j+1, []):
+            kingSafetyValue += 30
+        return output -kingSafetyValue * weights[black_king.j]
+
+
+def evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions):
+    output = 0
+    PawnValue = 100
+    passedPawnBonuses = [0, 120, 80, 50, 30, 15, 15]
+    isolatedPawnPenaltyByCount = [0, -10, -25, -50, -75, -75, -75, -75, -75]
+    isolatedCountWhite = 0
+    isolatedCountBlack = 0
+
+    output += (len(white_pawns) - len(black_pawns))*PawnValue
+    for column in white_pawn_positions:
+        for rij in white_pawn_positions[column]:
+            # Promote passed pawns
+            if not ((column in black_pawn_positions and min(black_pawn_positions[column]) < rij) or ((column-1) in black_pawn_positions and min(black_pawn_positions[column-1]) < rij) or ((column+1) in black_pawn_positions and min(black_pawn_positions[column+1]) < rij)):
+                output += passedPawnBonuses[rij]
+
+            # Punish isolated pawns
+            if not ((column+1) in white_pawn_positions or (column-1) in white_pawn_positions):
+                isolatedCountWhite += 1
+
+    for column in black_pawn_positions:
+        for rij in black_pawn_positions[column]:
+            # Promote passed pawns
+            if not ((column in white_pawn_positions and max(white_pawn_positions[column]) > rij) or ((column-1) in white_pawn_positions and max(white_pawn_positions[column-1]) > rij) or ((column+1) in white_pawn_positions and max(white_pawn_positions[column+1]) > rij)):
+                output -= passedPawnBonuses[7-rij]
+
+            # Punish isolated pawns
+            if not ((column+1) in black_pawn_positions or (column-1) in black_pawn_positions):
+                isolatedCountBlack += 1
+
+    output += isolatedPawnPenaltyByCount[isolatedCountWhite] - isolatedPawnPenaltyByCount[isolatedCountBlack]
+    return output
+
 
 def convert_black_to_white(image):
     white_image = image.copy()

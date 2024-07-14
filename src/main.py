@@ -2,7 +2,7 @@ import pygame as pg
 from assets.constants import *
 from src.Openings.openingtree import Tree
 from src.gamestate import Gamestate
-from time import sleep
+from time import sleep, time
 
 # INITIALISING WINDOW
 from src.pieces.bishop import Bishop
@@ -44,7 +44,9 @@ def main(version: int = 0):
             if event.type == pg.QUIT:
                 run = False
             if event.type == pg.KEYDOWN:
+                start = time()
                 gs.computer_makes_move(version, openingTree)
+                print(time()-start)
                 gs.draw_board(WINDOW)
                 pg.display.update()
                 if gs.white_wins():

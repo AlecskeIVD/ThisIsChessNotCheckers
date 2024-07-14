@@ -37,6 +37,7 @@ def get_moves(content):
     output = []
     for turn in actual_turns:
         turn = turn.strip()
+        turn.replace("+", "")
         output += turn.split()
 
     return output
