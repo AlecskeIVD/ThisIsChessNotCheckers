@@ -26,7 +26,7 @@ def mop_up_eval(white_material_value: int, black_material_value: int, white_king
 def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight):
     if endgameWeight >= 0.9:
         return 0
-    weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.9, 1.3, 1]
+    weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.7, 1.3, 1]
     kingSafetyValueWhite = 0
     kingSafetyValueBlack = 0
     output = 0
