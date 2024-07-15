@@ -27,23 +27,28 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
     if endgameWeight >= 0.9:
         return 0
     weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.9, 1.3, 1]
-    kingSafetyValue = 200
+    kingSafetyValueWhite = 0
+    kingSafetyValueBlack = 0
     output = 0
     # Check safety of white king
+    if white_king.i == 7:
+        kingSafetyValueWhite = 200
     if white_king.i+1 in white_pawn_positions.get(white_king.j, []):
-        kingSafetyValue += 40
+        kingSafetyValueWhite += 40
     if white_king.i+1 in white_pawn_positions.get(white_king.j-1, []):
-        kingSafetyValue += 30
+        kingSafetyValueWhite += 30
     if white_king.i+1 in white_pawn_positions.get(white_king.j+1, []):
-        kingSafetyValue += 30
-    output += kingSafetyValue * weights[white_king.j]
+        kingSafetyValueWhite += 30
+    output += kingSafetyValueWhite * weights[white_king.j]
+    if black_king.i == 0:
+        kingSafetyValueBlack = 200
     if black_king.i-1 in black_pawn_positions.get(black_king.j, []):
-        kingSafetyValue += 40
+        kingSafetyValueBlack += 40
     if black_king.i-1 in black_pawn_positions.get(black_king.j-1, []):
-        kingSafetyValue += 30
+        kingSafetyValueBlack += 30
     if black_king.i-1 in black_pawn_positions.get(black_king.j+1, []):
-        kingSafetyValue += 30
-    return output -kingSafetyValue * weights[black_king.j]
+        kingSafetyValueBlack += 30
+    return output - kingSafetyValueBlack * weights[black_king.j]
 
 
 class Gamestate:
