@@ -23,6 +23,29 @@ def mop_up_eval(white_material_value: int, black_material_value: int, white_king
     return 0
 
 
+def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight):
+    if endgameWeight >= 0.9:
+        return 0
+    weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.9, 1.3, 1]
+    kingSafetyValue = 200
+    output = 0
+    # Check safety of white king
+    if white_king.i+1 in white_pawn_positions.get(white_king.j, []):
+        kingSafetyValue += 40
+    if white_king.i+1 in white_pawn_positions.get(white_king.j-1, []):
+        kingSafetyValue += 30
+    if white_king.i+1 in white_pawn_positions.get(white_king.j+1, []):
+        kingSafetyValue += 30
+    output += kingSafetyValue * weights[white_king.j]
+    if black_king.i-1 in black_pawn_positions.get(black_king.j, []):
+        kingSafetyValue += 40
+    if black_king.i-1 in black_pawn_positions.get(black_king.j-1, []):
+        kingSafetyValue += 30
+    if black_king.i-1 in black_pawn_positions.get(black_king.j+1, []):
+        kingSafetyValue += 30
+    return output -kingSafetyValue * weights[black_king.j]
+
+
 class Gamestate:
     def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1):
         if black_pieces is None:
@@ -756,6 +779,152 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         # NO LEGAL VALUE
         return False
 
+    def generate_captures(self, colour) -> list['Gamestate']:
+        pawn_captures = []
+        knight_captures = []
+        bishop_captures = []
+        rook_captures = []
+        queen_captures = []
+        king_captures = []
+        if colour == WHITE:
+            for piece in self.white_pieces:
+                if piece.value == PAWN:
+                    possible_en_passanted_pawn_right = self.get_piece(piece.i, piece.j+1, BLACK)
+                    possible_en_passanted_pawn_left = self.get_piece(piece.i, piece.j - 1, BLACK)
+                    if self.get_piece(piece.i-1, piece.j+1, BLACK) is not None or (possible_en_passanted_pawn_right is not None and possible_en_passanted_pawn_right.value == PAWN and possible_en_passanted_pawn_right.en_passantable):
+                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [Pawn((piece.i-1, piece.j+1), WHITE)]
+                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
+                        if self.is_legal(new_gs):
+                            pawn_captures += [new_gs]
+                    if self.get_piece(piece.i-1, piece.j+1, BLACK) is not None or (possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
+                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [Pawn((piece.i-1, piece.j-1), WHITE)]
+                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
+                        if self.is_legal(new_gs):
+                            pawn_captures += [new_gs]
+
+                elif piece.value == KNIGHT:
+                    for position in piece.generate_possible_moves():
+                        if self.get_piece(position.i, position.j, BLACK) is not None:
+                            white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [
+                                position]
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                knight_captures += [new_gs]
+
+                elif piece.value == BISHOP:
+                    for temp_piece in self.black_pieces:
+                        if abs(piece.i-temp_piece.i) == abs(piece.j-temp_piece.j):
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if temp2_piece != piece] + [
+                                Bishop((temp_piece.i, temp_piece.j), WHITE)]
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                bishop_captures += [new_gs]
+                elif piece.value == ROOK:
+                    for temp_piece in self.black_pieces:
+                        if piece.i == temp_piece.i or piece.j == temp_piece.j:
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if
+                                            temp2_piece != piece] + [
+                                               Rook((temp_piece.i, temp_piece.j), WHITE, True)]
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                rook_captures += [new_gs]
+                elif piece.value == QUEEN:
+                    for temp_piece in self.black_pieces:
+                        if piece.i == temp_piece.i or piece.j == temp_piece.j or abs(piece.i-temp_piece.i) == abs(piece.j-temp_piece.j):
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if
+                                            temp2_piece != piece] + [
+                                               Queen((temp_piece.i, temp_piece.j), WHITE)]
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                queen_captures += [new_gs]
+                else:
+                    for temp_piece in self.black_pieces:
+                        if abs(piece.i-temp_piece.i) <= 1 and abs(piece.j-temp_piece.j) <= 1:
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if temp2_piece != piece] + [
+                                King((temp_piece.i, temp_piece.j), WHITE, True)]
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                king_captures += [new_gs]
+        else:
+            for piece in self.black_pieces:
+                if piece.value == PAWN:
+                    possible_en_passanted_pawn_right = self.get_piece(piece.i, piece.j + 1, WHITE)
+                    possible_en_passanted_pawn_left = self.get_piece(piece.i, piece.j - 1, WHITE)
+                    if self.get_piece(piece.i + 1, piece.j + 1, WHITE) is not None or (
+                            possible_en_passanted_pawn_right is not None and possible_en_passanted_pawn_right.value == PAWN and possible_en_passanted_pawn_right.en_passantable):
+                        black_pieces = [temp_piece for temp_piece in self.black_pieces if temp_piece != piece] + [
+                            Pawn((piece.i + 1, piece.j + 1), BLACK)]
+                        new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.move)
+                        if self.is_legal(new_gs):
+                            pawn_captures += [new_gs]
+                    if self.get_piece(piece.i + 1, piece.j + 1, WHITE) is not None or (
+                            possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
+                        black_pieces = [temp_piece for temp_piece in self.black_pieces if temp_piece != piece] + [
+                            Pawn((piece.i + 1, piece.j - 1), BLACK)]
+                        new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.move)
+                        if self.is_legal(new_gs):
+                            pawn_captures += [new_gs]
+
+                elif piece.value == KNIGHT:
+                    for position in piece.generate_possible_moves():
+                        if self.get_piece(position.i, position.j, WHITE) is not None:
+                            black_pieces = [temp_piece for temp_piece in self.black_pieces if temp_piece != piece] + [
+                                position]
+                            new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                knight_captures += [new_gs]
+
+                elif piece.value == BISHOP:
+                    for temp_piece in self.white_pieces:
+                        if abs(piece.i - temp_piece.i) == abs(piece.j - temp_piece.j):
+                            black_pieces = [temp2_piece for temp2_piece in self.black_pieces if
+                                            temp2_piece != piece] + [
+                                               Bishop((temp_piece.i, temp_piece.j), BLACK)]
+                            new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                bishop_captures += [new_gs]
+
+                elif piece.value == ROOK:
+                    for temp_piece in self.white_pieces:
+                        if piece.i == temp_piece.i or piece.j == temp_piece.j:
+                            black_pieces = [temp2_piece for temp2_piece in self.black_pieces if
+                                            temp2_piece != piece] + [
+                                               Rook((temp_piece.i, temp_piece.j), BLACK, True)]
+                            new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                rook_captures += [new_gs]
+
+                elif piece.value == QUEEN:
+                    for temp_piece in self.white_pieces:
+                        if piece.i == temp_piece.i or piece.j == temp_piece.j or abs(piece.i - temp_piece.i) == abs(
+                                piece.j - temp_piece.j):
+                            black_pieces = [temp2_piece for temp2_piece in self.black_pieces if
+                                            temp2_piece != piece] + [
+                                               Queen((temp_piece.i, temp_piece.j), BLACK)]
+                            new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                queen_captures += [new_gs]
+
+                else:
+                    for temp_piece in self.white_pieces:
+                        if abs(piece.i - temp_piece.i) <= 1 and abs(piece.j - temp_piece.j) <= 1:
+                            black_pieces = [temp2_piece for temp2_piece in self.black_pieces if
+                                            temp2_piece != piece] + [
+                                               King((temp_piece.i, temp_piece.j), BLACK, True)]
+                            new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
+                            if self.is_legal(new_gs):
+                                king_captures += [new_gs]
+        return pawn_captures + knight_captures + bishop_captures + rook_captures + queen_captures + king_captures
+
     def generate_all_moves(self, colour, return_moved_pieces=False):
         """
 A function that returns ALL possible gamestates after colour makes a move
@@ -1007,6 +1176,16 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
                     self.update(move)
             else:
                 self.iterative_deepening()
+        elif version == 6:
+            if self.move <= 12:
+                move_str = self.opening_move(tree)
+                if move_str is None:
+                    self.alpha_beta_best(3)
+                else:
+                    move = self.translate(move_str)
+                    self.update(move)
+            else:
+                self.alpha_beta_best(4)
         else:
             raise Exception
 
@@ -1150,20 +1329,135 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
                 return value, move
         return value, move
 
+    def alpha_beta_best(self, max_depth):
+        """
+    Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-beta-pruning for speedup. Uses
+    quiescent search to handle horizon effect
+        :param max_depth:
+        """
+        if self.move % 2 == 1:
+            # WHITE MAKES MOVE
+            value, chosen_move = self.alpha_beta_max_best(max_depth, float('-inf'), float('inf'))
+        else:
+            # BLACK MAKES MOVE
+            value, chosen_move = self.alpha_beta_min_best(max_depth, float('-inf'), float('inf'))
+        if chosen_move is None:
+            # Every move leads to same checkmate
+            self.maximize_value()
+        else:
+            # Found a move
+            self.update(chosen_move)
+
+    def alpha_beta_max_best(self, depth: int, alpha: float, beta: float):
+        if depth == 0:
+            return self.quiescence_search(alpha, beta, True), None
+        moves = self.legal_moves(WHITE, sort_by_heuristic=True)
+        if len(moves) == 0:
+            if self.king_under_attack(WHITE):
+                # LOSE DUE TO CHECKMATE
+                return float('-inf'), None
+            # DRAW
+            return 0, None
+        value = float('-inf')
+        move = None
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, turn2 = new_gs.alpha_beta_min(depth - 1, alpha, beta)
+            if value2 > value:
+                value, move = value2, turn
+                alpha = max(alpha, value)
+            if value >= beta:
+                return value, move
+        return value, move
+
+    def alpha_beta_min_best(self, depth: int, alpha: float, beta: float):
+        if depth == 0:
+            return self.quiescence_search(alpha, beta, False), None
+        moves = self.legal_moves(BLACK, sort_by_heuristic=True)
+        if len(moves) == 0:
+            if self.king_under_attack(BLACK):
+                # LOSE DUE TO CHECKMATE
+                return float('inf'), None
+            # DRAW
+            return 0, None
+        value = float('inf')
+        move = None
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, turn2 = new_gs.alpha_beta_max(depth - 1, alpha, beta)
+            if value2 < value:
+                value, move = value2, turn
+                beta = min(beta, value)
+            if value <= alpha:
+                return value, move
+        return value, move
+
+    def quiescence_search(self, alpha: float, beta: float, is_maximizing: bool):
+        """
+        Quiescence search to evaluate positions with potential captures or tactical moves.
+
+        :param alpha: Alpha value for pruning
+        :param beta: Beta value for pruning
+        :param is_maximizing: Boolean indicating if it's the maximizer's turn
+        :return: Evaluation score of the quiescence search
+        """
+        evaluation = self.evaluate_better()
+        if is_maximizing:
+            if evaluation >= beta:
+                return beta
+            if evaluation > alpha:
+                alpha = evaluation
+        else:
+            if evaluation <= alpha:
+                return alpha
+            if evaluation < beta:
+                beta = evaluation
+
+        moves = self.generate_captures(colour=WHITE if is_maximizing else BLACK)
+        for move in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(move, trust_me=True, update_string=False)
+            evaluation = new_gs.quiescence_search(alpha, beta, not is_maximizing)
+            if is_maximizing:
+                if evaluation >= beta:
+                    return beta
+                if evaluation > alpha:
+                    alpha = evaluation
+            else:
+                if evaluation <= alpha:
+                    return alpha
+                if evaluation < beta:
+                    beta = evaluation
+
+        return alpha if is_maximizing else beta
+
+    # Ensure the following methods are defined elsewhere in your class:
+    # - self.move
+    # - self.evaluate()
+    # - self.legal_moves(color=None, sort_by_heuristic=False, captures_only=False)
+    # - self.king_under_attack(color)
+    # - self.deep_copy()
+    # - self.update(move, trust_me, update_string)
+    # - self.maximize_value()
+
     def evaluate_better(self):
         black_king = None
         white_king = None
         output = 0
 
         KnightValue = 300
-        KnightValues = [[75.0, 112.5, 150.0, 150.0, 150.0, 150.0, 112.5, 75.0],
-                        [112.5, 150.0, 225.0, 225.0, 225.0, 225.0, 150.0, 112.5],
-                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
-                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
-                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
-                        [150.0, 225.0, 300.0, 300.0, 300.0, 300.0, 225.0, 150.0],
-                        [112.5, 150.0, 225.0, 225.0, 225.0, 225.0, 150.0, 112.5],
-                        [75.0, 112.5, 150.0, 150.0, 150.0, 150.0, 112.5, 75.0]]
+        KnightValues = [
+            [200, 225, 250, 275, 275, 250, 225, 200],
+            [225, 250, 275, 300, 300, 275, 250, 225],
+            [250, 275, 300, 325, 325, 300, 275, 250],
+            [275, 300, 325, 350, 350, 325, 300, 275],
+            [275, 300, 325, 350, 350, 325, 300, 275],
+            [250, 275, 300, 325, 325, 300, 275, 250],
+            [225, 250, 275, 300, 300, 275, 250, 225],
+            [200, 225, 250, 275, 275, 250, 225, 200]
+    ]
         BishopValue = 320
         RookValue = 500
         QueenValue = 900
@@ -1223,7 +1517,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         output += (len(white_rooks) - len(black_rooks)) * RookValue
         output += mop_up_eval(len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue + len(white_pawns)*PawnValue, len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
                 black_knights) * KnightValue + len(black_pawns)*PawnValue, white_king, black_king, endgameWeight)
-        output += self.king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight)
+        output += king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight)
         return output
 
     def evaluate(self, account_for_draw=False) -> float:
@@ -1460,7 +1754,7 @@ A heuristic function to make a guess on evaluation of current position without r
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, _ = new_gs.alpha_beta_max(depth - 1, alpha, beta)
+            value2, _ = new_gs.alpha_beta_max_all(depth - 1, alpha, beta)
             move_values.append((value2, turn))
             if value2 < beta:
                 beta = value2
@@ -1469,28 +1763,6 @@ A heuristic function to make a guess on evaluation of current position without r
 
         move_values.sort(key=lambda x: x[0])
         return move_values[0][0], move_values
-
-    def king_pawn_shield(self, white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight):
-        if endgameWeight >= 0.9:
-            return 0
-        weights = [0.8, 1.2, 1.1, 0.5, 0.5, 0.9, 1.3, 1]
-        kingSafetyValue = 200
-        output = 0
-        # Check safety of white king
-        if white_king.i+1 in white_pawn_positions.get(white_king.j, []):
-            kingSafetyValue += 40
-        if white_king.i+1 in white_pawn_positions.get(white_king.j-1, []):
-            kingSafetyValue += 30
-        if white_king.i+1 in white_pawn_positions.get(white_king.j+1, []):
-            kingSafetyValue += 30
-        output += kingSafetyValue * weights[white_king.j]
-        if black_king.i-1 in black_pawn_positions.get(black_king.j, []):
-            kingSafetyValue += 40
-        if black_king.i-1 in black_pawn_positions.get(black_king.j-1, []):
-            kingSafetyValue += 30
-        if black_king.i-1 in black_pawn_positions.get(black_king.j+1, []):
-            kingSafetyValue += 30
-        return output -kingSafetyValue * weights[black_king.j]
 
 
 def evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions):
