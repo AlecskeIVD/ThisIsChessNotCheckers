@@ -267,7 +267,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i, horizontal_index_left, colour) is not None:
+            if piece is not None or self.get_piece(king.i, horizontal_index_left, colour) is not None:
                 blocking_piece_found = True
             horizontal_index_left -= 1
         blocking_piece_found = False
@@ -276,7 +276,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i, horizontal_index_right, colour) is not None:
+            if piece is not None or self.get_piece(king.i, horizontal_index_right, colour) is not None:
                 blocking_piece_found = True
             horizontal_index_right += 1
 
@@ -289,7 +289,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(vertical_index_up, king.j, colour) is not None:
+            if piece is not None or self.get_piece(vertical_index_up, king.j, colour) is not None:
                 blocking_piece_found = True
             vertical_index_up -= 1
         blocking_piece_found = False
@@ -298,7 +298,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == ROOK or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(vertical_index_down, king.j, colour) is not None:
+            if piece is not None or self.get_piece(vertical_index_down, king.j, colour) is not None:
                 blocking_piece_found = True
             vertical_index_down += 1
 
@@ -315,7 +315,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i + index_br, king.j + index_br, colour) is not None:
+            if piece is not None or self.get_piece(king.i + index_br, king.j + index_br, colour) is not None:
                 blocking_piece_found = True
             index_br += 1
         blocking_piece_found = False
@@ -325,7 +325,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i + index_bl, king.j - index_bl, colour) is not None:
+            if piece is not None or self.get_piece(king.i + index_bl, king.j - index_bl, colour) is not None:
                 blocking_piece_found = True
             index_bl += 1
         blocking_piece_found = False
@@ -335,7 +335,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i - index_tr, king.j + index_tr, colour) is not None:
+            if piece is not None or self.get_piece(king.i - index_tr, king.j + index_tr, colour) is not None:
                 blocking_piece_found = True
             index_tr += 1
         blocking_piece_found = False
@@ -345,7 +345,7 @@ Checks if the king of team 'colour' is in check
             if piece is not None and (piece.value == BISHOP or piece.value == QUEEN) and piece.colour != colour:
                 if self.get_piece(piece.i, piece.j, colour) is None:
                     return True
-            elif piece is not None or self.get_piece(king.i - index_tl, king.j - index_tl, colour) is not None:
+            if piece is not None or self.get_piece(king.i - index_tl, king.j - index_tl, colour) is not None:
                 blocking_piece_found = True
             index_tl += 1
         piece_top_left = self.get_piece(king.i - 1, king.j - 1, opposite(colour))
@@ -1351,6 +1351,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             self.maximize_value()
         else:
             # Found a move
+            print(f'Current evaluation: {value}')
             self.update(chosen_move)
 
     def alpha_beta_max_best(self, depth: int, alpha: float, beta: float):
@@ -1368,7 +1369,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, turn2 = new_gs.alpha_beta_min(depth - 1, alpha, beta)
+            value2, turn2 = new_gs.alpha_beta_min_best(depth - 1, alpha, beta)
             if value2 > value:
                 value, move = value2, turn
                 alpha = max(alpha, value)
@@ -1391,7 +1392,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, turn2 = new_gs.alpha_beta_max(depth - 1, alpha, beta)
+            value2, turn2 = new_gs.alpha_beta_max_best(depth - 1, alpha, beta)
             if value2 < value:
                 value, move = value2, turn
                 beta = min(beta, value)

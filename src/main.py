@@ -29,11 +29,6 @@ def main(version: int = 0):
     clock = pg.time.Clock()
     gs = Gamestate(load_images=True)
     openingTree = Tree()
-
-    # gs = Gamestate([Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE),
-    #                Rook(BP_WRROOK, WHITE), Pawn((6, 7), WHITE)], [Knight(BP_BLKNIGHT, BLACK),
-    #                                                                Knight(BP_BRKNIGHT, BLACK), King(BP_BKING, BLACK)],
-    #                load_images=True)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()

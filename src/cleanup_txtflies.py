@@ -7,6 +7,7 @@ def remove_metadata(file_path):
         content = file.read()
         # Use regular expression to remove metadata in brackets
         cleaned_content = re.sub(r'\[.*?]\n', '', content)
+        cleaned_content = re.sub(r'\+', '', cleaned_content)
 
     with open(file_path, 'w') as file:
         file.write(cleaned_content)
