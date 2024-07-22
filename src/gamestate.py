@@ -1191,6 +1191,16 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
                     self.update(move)
             else:
                 self.alpha_beta_best(4)
+        elif version == 7:
+            if self.move <= 12:
+                move_str = self.opening_move(tree)
+                if move_str is None:
+                    self.iterative_deepening_better()
+                else:
+                    move = self.translate(move_str)
+                    self.update(move)
+            else:
+                self.iterative_deepening_better()
         else:
             raise Exception
 
@@ -1746,6 +1756,80 @@ A heuristic function to make a guess on evaluation of current position without r
     def alpha_beta_min_all(self, depth: int, alpha: float, beta: float, ordered_moves=None):
         if depth == 0:
             return self.evaluate_better(), None
+
+        if ordered_moves is None:
+            moves = list(self.legal_moves(BLACK, sort_by_heuristic=True))
+        else:
+            moves = [move[1] for move in ordered_moves]
+        if len(moves) == 0:
+            if self.king_under_attack(BLACK):
+                return float('inf'), None  # Lose due to checkmate
+            return 0, None  # Draw
+
+        move_values = []
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, _ = new_gs.alpha_beta_max_all(depth - 1, alpha, beta)
+            move_values.append((value2, turn))
+            if value2 < beta:
+                beta = value2
+            if beta <= alpha:
+                break
+
+        move_values.sort(key=lambda x: x[0])
+        return move_values[0][0], move_values
+
+    def iterative_deepening_better(self):
+        start_time = time()
+        best_move = None
+        depth = 1
+        ordered_moves = None
+
+        while time() - start_time < 1:
+            print(f'Performing iterative deepening with depth {depth}')
+            if self.move % 2 == 1:
+                # WHITE'S TURN
+                _, ordered_moves = self.alpha_beta_max_all_better(depth, float('-inf'), float('inf'), ordered_moves)
+            else:
+                # BLACK'S TURN
+                _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves)
+            depth += 1
+        if ordered_moves:
+            self.update(ordered_moves[0][1])
+        else:
+            raise Exception
+
+    def alpha_beta_max_all_better(self, depth, alpha, beta, ordered_moves):
+        if depth == 0:
+            return self.quiescence_search(alpha, beta, True), None
+
+        if ordered_moves is None:
+            moves = list(self.legal_moves(WHITE, sort_by_heuristic=True))
+        else:
+            moves = [move[1] for move in ordered_moves]
+        if len(moves) == 0:
+            if self.king_under_attack(WHITE):
+                return float('-inf'), None  # Lose due to checkmate
+            return 0, None  # Draw
+
+        move_values = []
+        for turn in moves:
+            new_gs = self.deep_copy()
+            new_gs.update(turn, trust_me=True, update_string=False)
+            value2, _ = new_gs.alpha_beta_min_all(depth - 1, alpha, beta)
+            move_values.append((value2, turn))
+            if value2 > alpha:
+                alpha = value2
+            if alpha >= beta:
+                break
+
+        move_values.sort(key=lambda x: x[0], reverse=True)
+        return move_values[0][0], move_values
+
+    def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves):
+        if depth == 0:
+            return self.quiescence_search(alpha, beta, False), None
 
         if ordered_moves is None:
             moves = list(self.legal_moves(BLACK, sort_by_heuristic=True))
