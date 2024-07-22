@@ -1715,7 +1715,7 @@ A heuristic function to make a guess on evaluation of current position without r
         ordered_moves = None
 
         while time()-start_time<1:
-            print(depth)
+            # print(depth)
             if self.move % 2 == 1:
                 # WHITE'S TURN
                 _, ordered_moves = self.alpha_beta_max_all(depth, float('-inf'), float('inf'), ordered_moves)
@@ -1802,7 +1802,7 @@ A heuristic function to make a guess on evaluation of current position without r
         else:
             raise Exception
 
-    def alpha_beta_max_all_better(self, depth, alpha, beta, ordered_moves):
+    def alpha_beta_max_all_better(self, depth, alpha, beta, ordered_moves=None):
         if depth == 0:
             return self.quiescence_search(alpha, beta, True), None
 
@@ -1819,7 +1819,7 @@ A heuristic function to make a guess on evaluation of current position without r
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, _ = new_gs.alpha_beta_min_all(depth - 1, alpha, beta)
+            value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
             if value2 > alpha:
                 alpha = value2
@@ -1829,7 +1829,7 @@ A heuristic function to make a guess on evaluation of current position without r
         move_values.sort(key=lambda x: x[0], reverse=True)
         return move_values[0][0], move_values
 
-    def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves):
+    def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves=None):
         if depth == 0:
             return self.quiescence_search(alpha, beta, False), None
 
@@ -1846,7 +1846,7 @@ A heuristic function to make a guess on evaluation of current position without r
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, _ = new_gs.alpha_beta_max_all(depth - 1, alpha, beta)
+            value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
             if value2 < beta:
                 beta = value2

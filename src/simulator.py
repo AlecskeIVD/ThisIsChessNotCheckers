@@ -9,12 +9,14 @@ def main():
     white_wins = 0
     black_wins = 0
     draws = 0
+    openingTree = Tree()
     for i in range(1,n+1):
         print(f"Game {i}: White has won {white_wins} games, black has won {black_wins} games and there have been {draws} draws.")
         gs = Gamestate()
         game_is_over = False
         while not game_is_over:
-            gs.computer_makes_move(white)
+            print(f'Turn {(gs.move // 2) + 1}: Current evaluation gives: {gs.evaluate()}')
+            gs.computer_makes_move(white, openingTree)
             if gs.white_wins():
                 game_is_over = True
                 white_wins += 1
@@ -25,7 +27,7 @@ def main():
                 game_is_over = True
                 draws += 1
             else:
-                gs.computer_makes_move(black)
+                gs.computer_makes_move(black, openingTree)
                 if gs.white_wins():
                     game_is_over = True
                     white_wins += 1
