@@ -801,7 +801,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                         new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
                         if self.is_legal(new_gs):
                             pawn_captures += [new_gs]
-                    if self.get_piece(piece.i-1, piece.j+1, BLACK) is not None or (possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
+                    if self.get_piece(piece.i-1, piece.j-1, BLACK) is not None or (possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
                         white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [Pawn((piece.i-1, piece.j-1), WHITE)]
                         new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
                         if self.is_legal(new_gs):
@@ -866,7 +866,7 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                         new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False, self.move)
                         if self.is_legal(new_gs):
                             pawn_captures += [new_gs]
-                    if self.get_piece(piece.i + 1, piece.j + 1, WHITE) is not None or (
+                    if self.get_piece(piece.i + 1, piece.j - 1, WHITE) is not None or (
                             possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
                         black_pieces = [temp_piece for temp_piece in self.black_pieces if temp_piece != piece] + [
                             Pawn((piece.i + 1, piece.j - 1), BLACK)]
