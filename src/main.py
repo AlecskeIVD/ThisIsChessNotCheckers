@@ -103,8 +103,6 @@ def main(version: int = 0):
                         run = False
                         print("Stalemate; no more legal moves")
                         sleep(3)
-                    print(WHITE if gs.move % 2 == 1 else BLACK)
-                    print(len(gs.generate_captures(WHITE if gs.move % 2 == 1 else BLACK)))
 
     pg.quit()
 
