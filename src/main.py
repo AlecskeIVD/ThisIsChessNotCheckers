@@ -47,12 +47,15 @@ def main(version: int = 0):
                 if gs.white_wins():
                     run = False
                     print("White has won!")
+                    sleep(3)
                 elif gs.black_wins():
                     run = False
                     print("Black has won")
+                    sleep(3)
                 elif gs.stalemate():
                     run = False
                     print("The game has ended in a draw")
+                    sleep(3)
             if event.type == pg.MOUSEBUTTONDOWN:
                 pos = pg.mouse.get_pos()
                 i = pos[1] // SQUAREWIDTH
