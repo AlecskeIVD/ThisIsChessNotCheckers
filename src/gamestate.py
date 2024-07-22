@@ -1462,6 +1462,8 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         black_king = None
         white_king = None
         output = 0
+        if self.move-self.last_non_drawing_turn >= 100:
+            return 0
 
         KnightValue = 300
         KnightValues = [
