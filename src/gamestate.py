@@ -32,7 +32,7 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
     output = 0
     # Check safety of white king
     if white_king.i == 7:
-        kingSafetyValueWhite = 200
+        kingSafetyValueWhite = 90
     if white_king.i+1 in white_pawn_positions.get(white_king.j, []):
         kingSafetyValueWhite += 40
     if white_king.i+1 in white_pawn_positions.get(white_king.j-1, []):
@@ -41,7 +41,7 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
         kingSafetyValueWhite += 30
     output += kingSafetyValueWhite * weights[white_king.j]
     if black_king.i == 0:
-        kingSafetyValueBlack = 200
+        kingSafetyValueBlack = 90
     if black_king.i-1 in black_pawn_positions.get(black_king.j, []):
         kingSafetyValueBlack += 40
     if black_king.i-1 in black_pawn_positions.get(black_king.j-1, []):
@@ -1784,11 +1784,10 @@ A heuristic function to make a guess on evaluation of current position without r
 
     def iterative_deepening_better(self):
         start_time = time()
-        best_move = None
         depth = 1
         ordered_moves = None
 
-        while time() - start_time < 1:
+        while time() - start_time < 2 or depth <= 3:
             print(f'Performing iterative deepening with depth {depth}')
             if self.move % 2 == 1:
                 # WHITE'S TURN
