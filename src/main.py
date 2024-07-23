@@ -27,7 +27,8 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate(load_images=True)
+    gs = Gamestate(load_images=True, move=15)
+    gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
     openingTree = Tree()
     selected_piece = None
     gs.draw_board(WINDOW)
@@ -104,7 +105,7 @@ def main(version: int = 0):
                         sleep(3)
                     elif gs.stalemate():
                         run = False
-                        print("Stalemate; no more legal moves")
+                        print("The game has ended in a draw")
                         sleep(3)
 
     pg.quit()

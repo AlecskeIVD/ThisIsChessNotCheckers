@@ -12,14 +12,13 @@ from pieces.queen import Queen
 from src.Openings.openingtree import Tree
 
 
-
 def mop_up_eval(white_material_value: int, black_material_value: int, white_king: King, black_king: King, endgame_weight: float):
     PawnValue = 100
     # As game transitions to endgame, and if up material, then encourage moving king closer to opponent king
     if white_material_value > black_material_value + 2*PawnValue and endgame_weight > 0:
         return int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
     elif white_material_value < black_material_value - 2*PawnValue and endgame_weight > 0:
-        return int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
+        return -int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
     return 0
 
 
@@ -52,7 +51,7 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
 
 
 class Gamestate:
-    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1):
+    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1, previous_states: ['Gamestate']=None):
         if black_pieces is None:
             black_pieces = []
         if white_pieces is None:
@@ -91,6 +90,23 @@ class Gamestate:
         self.move = move
         self.last_non_drawing_turn = last_non_drawing_turn
         self.moves = ""
+        if previous_states is None:
+            self.previous_states = [self.deep_copy_without_previous_states()]
+        else:
+            self.previous_states = previous_states.copy()
+
+    def __eq__(self, other):
+        if not isinstance(other, Gamestate):
+            return False
+        if len(other.white_pieces) != len(self.white_pieces) or len(other.black_pieces) != len(self.black_pieces):
+            return False
+        for piece in self.white_pieces:
+            if piece not in other.white_pieces:
+                return False
+        for piece in self.black_pieces:
+            if piece not in other.black_pieces:
+                return False
+        return True
 
     def get_piece(self, i, j, colour=None):
         if colour is None:
@@ -128,6 +144,11 @@ class Gamestate:
         # 50 MOVE RULE
         if self.move - self.last_non_drawing_turn >= 100:
             return True
+
+        # THREEPEAT RULE
+        if self.previous_states.count(self) >= 3:
+            return True
+
 
         # CHECK FOR INSUFFICIENT MATERIAL
         if len(self.black_pieces) == len(self.white_pieces) == 1:
@@ -1083,6 +1104,7 @@ removing captured elements and restoring en-passantable values for pawns of colo
                     self.moves += "Bx" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
                 else:
                     self.moves += "B" + index_to_column[moved_piece_new.j] + index_to_row[moved_piece_new.i] + " "
+        self.previous_states.append(self.deep_copy_without_previous_states())
 
     def draw_board(self, window):
         # Draw Board
@@ -1132,7 +1154,7 @@ Returns a copy of a gamestate where every piece is a copy of one of the pieces o
                 new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
             elif piece.value == KNIGHT:
                 new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
-        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn)
+        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn, self.previous_states)
 
     def computer_makes_move(self, version: int, tree: Tree = None):
         """
@@ -1155,7 +1177,10 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             else:
                 depth = 3
             move = self.minmax(depth=depth, maximise=(self.move % 2 == 1))[0]
-            self.update(move)
+            if move is None:
+                self.maximize_value()
+            else:
+                self.update(move)
         elif version == 3:
             # CAN SEE BETTER AHEAD AND IS FASTER, BUT HAS TROUBLE CHECKMATING
             self.alpha_beta_search(4)
@@ -1244,7 +1269,7 @@ values of pieces of other colour
         chosen_move = best_moves[randint(0, len(best_moves) - 1)]
         self.update(chosen_move)
 
-    def minmax(self, depth: int, maximise: bool) -> ('Gamestate', int):
+    def minmax(self, depth: int, maximise: bool) -> ('Gamestate', int or float):
         """
 Returns the best possible move, based on next best possible move by opponent, based on next best possible move by self,
 until depth is reached and simple move is chosen based on piece evaluation
@@ -1463,6 +1488,8 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         white_king = None
         output = 0
         if self.move-self.last_non_drawing_turn >= 100:
+            return 0
+        if self.previous_states.count(self) >= 3:
             return 0
 
         KnightValue = 300
@@ -1854,6 +1881,38 @@ A heuristic function to make a guess on evaluation of current position without r
 
         move_values.sort(key=lambda x: x[0])
         return move_values[0][0], move_values
+
+    def deep_copy_without_previous_states(self):
+        new_white_pieces = []
+        for piece in self.white_pieces:
+            if piece.value == PAWN:
+                new_white_pieces.append(Pawn((piece.i, piece.j), piece.colour, piece.en_passantable))
+            elif piece.value == KING:
+                new_white_pieces.append(King((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == QUEEN:
+                new_white_pieces.append(Queen((piece.i, piece.j), piece.colour))
+            elif piece.value == ROOK:
+                new_white_pieces.append(Rook((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == BISHOP:
+                new_white_pieces.append(Bishop((piece.i, piece.j), piece.colour))
+            elif piece.value == KNIGHT:
+                new_white_pieces.append(Knight((piece.i, piece.j), piece.colour))
+        new_black_pieces = []
+        for piece in self.black_pieces:
+            if piece.value == PAWN:
+                new_black_pieces.append(Pawn((piece.i, piece.j), piece.colour, piece.en_passantable))
+            elif piece.value == KING:
+                new_black_pieces.append(King((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == QUEEN:
+                new_black_pieces.append(Queen((piece.i, piece.j), piece.colour))
+            elif piece.value == ROOK:
+                new_black_pieces.append(Rook((piece.i, piece.j), piece.colour, piece.has_moved))
+            elif piece.value == BISHOP:
+                new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
+            elif piece.value == KNIGHT:
+                new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
+        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn,
+                         [])
 
 
 def evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions):
