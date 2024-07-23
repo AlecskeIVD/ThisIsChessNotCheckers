@@ -1814,7 +1814,7 @@ A heuristic function to make a guess on evaluation of current position without r
         depth = 1
         ordered_moves = None
 
-        while time() - start_time < 2 or depth <= 3:
+        while time() - start_time < MAX_TIME or depth <= 4:
             print(f'Performing iterative deepening with depth {depth}')
             if self.move % 2 == 1:
                 # WHITE'S TURN

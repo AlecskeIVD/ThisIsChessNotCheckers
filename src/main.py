@@ -27,8 +27,8 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate(load_images=True, move=15)
-    gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
+    gs = Gamestate(load_images=True)
+    # gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
     openingTree = Tree()
     selected_piece = None
     gs.draw_board(WINDOW)

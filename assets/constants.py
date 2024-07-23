@@ -20,6 +20,9 @@ ROOK = 5
 QUEEN = 9
 KING = 10
 
+# MINMAX-SEARCHING
+MAX_TIME = 10
+
 # BEGIN POSITIONS PIECES
 """
 Board will look like this:
