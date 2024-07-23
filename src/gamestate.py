@@ -1503,7 +1503,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             [225, 250, 275, 300, 300, 275, 250, 225],
             [200, 225, 250, 275, 275, 250, 225, 200]
     ]
-        BishopValue = 320
+        BishopValue = 310
         RookValue = 500
         QueenValue = 900
         PawnValue = 100
@@ -1557,7 +1557,16 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
                 black_knights) * KnightValue
         endgameWeight = 1 - min(1.0, opponentMaterialCountWithoutPawns / endgameMaterialStart)
         output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
-        output += (len(white_bishops) - len(black_bishops))*BishopValue
+        for bishop in white_bishops:
+            if bishop.i == bishop.j or bishop.i == 7-bishop.j:
+                output += BishopValue + 45
+            else:
+                output += BishopValue
+        for bishop in black_bishops:
+            if bishop.i == bishop.j or bishop.i == 7-bishop.j:
+                output = output - (BishopValue + 45)
+            else:
+                output += BishopValue
         output += (len(white_queens) - len(black_queens)) * QueenValue
         output += (len(white_rooks) - len(black_rooks)) * RookValue
         output += mop_up_eval(len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue + len(white_pawns)*PawnValue, len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
