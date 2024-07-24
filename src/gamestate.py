@@ -1018,7 +1018,7 @@ removing captured elements and restoring en-passantable values for pawns of colo
             if piece not in self.black_pieces:
                 moved_piece_new = piece
         if moved_piece_new.colour == BLACK:
-            self.black_pieces = [piece for piece in self.black_pieces if piece != moved_piece_old] + [moved_piece_new]
+            self.black_pieces = [moved_piece_new] + [piece for piece in self.black_pieces if piece != moved_piece_old]
             if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
@@ -1040,7 +1040,7 @@ removing captured elements and restoring en-passantable values for pawns of colo
                     else:
                         piece.en_passantable = False
         else:
-            self.white_pieces = [piece for piece in self.white_pieces if piece != moved_piece_old] + [moved_piece_new]
+            self.white_pieces = [moved_piece_new] + [piece for piece in self.white_pieces if piece != moved_piece_old]
             if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
@@ -1494,14 +1494,14 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
 
         KnightValue = 300
         KnightValues = [
-            [200, 225, 250, 275, 275, 250, 225, 200],
-            [225, 250, 275, 300, 300, 275, 250, 225],
-            [250, 275, 300, 325, 325, 300, 275, 250],
-            [275, 300, 325, 350, 350, 325, 300, 275],
-            [275, 300, 325, 350, 350, 325, 300, 275],
-            [250, 275, 300, 325, 325, 300, 275, 250],
-            [225, 250, 275, 300, 300, 275, 250, 225],
-            [200, 225, 250, 275, 275, 250, 225, 200]
+            [280, 285, 290, 290, 290, 290, 285, 280],
+            [280, 285, 290, 290, 290, 290, 285, 280],
+            [280, 295, 300, 300, 300, 300, 295, 280],
+            [300, 300, 300, 300, 300, 300, 300, 300],
+            [300, 300, 300, 300, 300, 300, 300, 300],
+            [280, 295, 300, 300, 300, 300, 295, 280],
+            [280, 285, 290, 290, 290, 290, 285, 280],
+            [280, 285, 290, 290, 290, 290, 285, 280]
     ]
         BishopValue = 310
         RookValue = 500
@@ -1558,7 +1558,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         endgameWeight = 1 - min(1.0, opponentMaterialCountWithoutPawns / endgameMaterialStart)
         output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
         for bishop in white_bishops:
-            if bishop.i == bishop.j or bishop.i == 7-bishop.j:
+            if (bishop.i == bishop.j or bishop.i == 7-bishop.j) and (bishop.j <= 1 or bishop.j <= 6):
                 output += BishopValue + 45
             else:
                 output += BishopValue
@@ -1566,7 +1566,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             if bishop.i == bishop.j or bishop.i == 7-bishop.j:
                 output = output - (BishopValue + 45)
             else:
-                output += BishopValue
+                output -= BishopValue
         output += (len(white_queens) - len(black_queens)) * QueenValue
         output += (len(white_rooks) - len(black_rooks)) * RookValue
         output += mop_up_eval(len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue + len(white_pawns)*PawnValue, len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
@@ -1823,7 +1823,7 @@ A heuristic function to make a guess on evaluation of current position without r
         depth = 1
         ordered_moves = None
 
-        while time() - start_time < MAX_TIME or depth <= 4:
+        while time() - start_time < MAX_TIME or depth <= 5:
             print(f'Performing iterative deepening with depth {depth}')
             if self.move % 2 == 1:
                 # WHITE'S TURN

@@ -81,6 +81,7 @@ def main(version: int = 0):
                                 gs.black_pieces, gs.move + 1)
                             if gs.is_legal(target_gs):
                                 gs.update(target_gs)
+                                print(f"Turn {gs.move // 2}: Current evaluation is {gs.evaluate_better()}")
                             else:
                                 selected_piece = None
                         else:
@@ -90,6 +91,7 @@ def main(version: int = 0):
                                                   gs.move + 1)
                             if gs.is_legal(target_gs):
                                 gs.update(target_gs)
+                                print(f"Turn {(gs.move // 2) + 1}: Current evaluation is {gs.evaluate_better()}")
                             else:
                                 selected_piece = None
                     gs.draw_board(WINDOW)
