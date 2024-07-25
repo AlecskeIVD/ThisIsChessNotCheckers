@@ -96,6 +96,12 @@ class Gamestate:
             self.previous_states = [self.deep_copy_without_previous_states()]
         else:
             self.previous_states = previous_states.copy()
+        self.white_dict = {}
+        self.black_dict = {}
+        for piece in self.white_pieces:
+            self.white_dict[(piece.i, piece.j)] = piece
+        for piece in self.black_pieces:
+            self.black_dict[(piece.i, piece.j)] = piece
 
     def __eq__(self, other):
         if not isinstance(other, Gamestate):
@@ -112,21 +118,12 @@ class Gamestate:
 
     def get_piece(self, i, j, colour=None):
         if colour is None:
-            for piece in self.white_pieces:
-                if piece.i == i and piece.j == j:
-                    return piece
-            for piece in self.black_pieces:
-                if piece.i == i and piece.j == j:
-                    return piece
+            result = self.white_dict.get((i, j), None)
+            return result if result is not None else self.black_dict.get((i, j), None)
         elif colour == WHITE:
-            for piece in self.white_pieces:
-                if piece.i == i and piece.j == j:
-                    return piece
+            return self.white_dict.get((i, j), None)
         else:
-            for piece in self.black_pieces:
-                if piece.i == i and piece.j == j:
-                    return piece
-        return None
+            return self.black_dict.get((i, j), None)
 
     def white_wins(self):
         if self.move % 2 == 0 and len(self.legal_moves(BLACK)) == 0 and self.king_under_attack(BLACK):
@@ -1660,46 +1657,70 @@ removing captured elements and restoring en-passantable values for pawns of colo
                     moved_piece_new = piece
         if moved_piece_new.colour == BLACK:
             self.black_pieces = [moved_piece_new] + [piece for piece in self.black_pieces if piece != moved_piece_old]
+            self.black_dict.pop((moved_piece_old.i, moved_piece_old.j))
+            self.black_dict[(moved_piece_new.i, moved_piece_new.j)] = moved_piece_new
             if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
                     # MOVED TO RIGHT
                     self.black_pieces.remove(Rook((0, 7), BLACK, False))
                     self.black_pieces.append(Rook((0, moved_piece_new.j - 1), BLACK, True))
+                    self.black_dict.pop((0, 7))
+                    self.black_dict[0, moved_piece_new.j - 1] = self.black_pieces[-1]
                 else:
                     # MOVED TO LEFT
                     self.black_pieces.remove(Rook((0, 0), BLACK, False))
                     self.black_pieces.append(Rook((0, moved_piece_new.j + 1), BLACK, True))
+                    self.black_dict.pop((0, 0))
+                    self.black_dict[0, moved_piece_new.j + 1] = self.black_pieces[-1]
             # Remove white piece if it's captured
-            self.white_pieces = [piece for piece in self.white_pieces if
-                                 piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
+            new_pieces = []
+            for piece in self.white_pieces:
+                if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
+                    self.white_dict.pop((piece.i, piece.j))
+                else:
+                    new_pieces.append(piece)
+            self.white_pieces = new_pieces
             for piece in self.white_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
                     if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i + 1 and moved_piece_new.j == piece.j:
                         self.white_pieces.remove(piece)
+                        self.white_dict.pop((piece.i, piece.j))
                     else:
                         piece.en_passantable = False
         else:
             self.white_pieces = [moved_piece_new] + [piece for piece in self.white_pieces if piece != moved_piece_old]
+            self.white_dict.pop((moved_piece_old.i, moved_piece_old.j))
+            self.white_dict[(moved_piece_new.i, moved_piece_new.j)] = moved_piece_new
             if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
                 # Castle, so we have to update rook that castled
                 if moved_piece_new.j > moved_piece_old.j:
                     # MOVED TO RIGHT
                     self.white_pieces.remove(Rook((7, 7), WHITE, False))
                     self.white_pieces.append(Rook((7, moved_piece_new.j - 1), WHITE, True))
+                    self.white_dict.pop((7, 7))
+                    self.white_dict[7, moved_piece_new.j - 1] = self.white_pieces[-1]
                 else:
                     # MOVED TO LEFT
                     self.white_pieces.remove(Rook((7, 0), WHITE, False))
                     self.white_pieces.append(Rook((7, moved_piece_new.j + 1), WHITE, True))
+                    self.white_dict.pop((7, 0))
+                    self.white_dict[7, moved_piece_new.j + 1] = self.white_pieces[-1]
             # Remove black piece if it's captured
-            self.black_pieces = [piece for piece in self.black_pieces if
-                                 piece.i != moved_piece_new.i or piece.j != moved_piece_new.j]
+            new_pieces = []
+            for piece in self.black_pieces:
+                if piece.i == moved_piece_new.i and piece.j == moved_piece_new.j:
+                    self.black_dict.pop((piece.i, piece.j))
+                else:
+                    new_pieces.append(piece)
+            self.black_pieces = new_pieces
             for piece in self.black_pieces[:]:
                 if piece.value == PAWN:
                     # CHECK IF IT GOT EN-PASSANTED
                     if piece.en_passantable and moved_piece_new.value == PAWN and moved_piece_new.i == piece.i - 1 and moved_piece_new.j == piece.j:
                         self.black_pieces.remove(piece)
+                        self.black_dict.pop((piece.i, piece.j))
                     else:
                         piece.en_passantable = False
         capture = len(self.white_pieces) != old_len_white or len(self.black_pieces) != old_len_black

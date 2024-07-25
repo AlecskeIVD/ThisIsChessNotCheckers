@@ -26,27 +26,7 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    # gs = Gamestate(load_images=True)
-    # gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
-    white_pieces = [Rook(BP_WLROOK, WHITE), Rook(BP_WRROOK, WHITE), Knight(BP_WLKNIGHT, WHITE),
-                    Knight((3,4), WHITE), Bishop(BP_WLBISHOP, WHITE), Bishop(BP_WRBISHOP, WHITE),
-                    Queen((6,4), WHITE), King(BP_WKING, WHITE)]
-    for i in range(COLUMNS):
-        if i!=4:
-            white_pieces.append(Pawn((ROWS - 2, i), WHITE))
-    white_pieces.reverse()  # To promote pawn moves in opening
-
-    black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK), Knight(BP_BLKNIGHT, BLACK),
-                    Knight((4,4), BLACK), Bishop(BP_BLBISHOP, BLACK), Bishop(BP_BRBISHOP, BLACK),
-                    Queen(BP_BQUEEN, BLACK), King(BP_BKING, BLACK)]
-    for i in range(COLUMNS):
-        if i != 4:
-            black_pieces.append(Pawn((1, i), BLACK))
-    # To promote pawn moves in opening
-    black_pieces.reverse()
-    gs = Gamestate(white_pieces, black_pieces,move=4, load_images=True)
-    temp0 = gs.legal_moves(BLACK, True)
-    temp = gs.legal_moves_faster(BLACK)
+    gs = Gamestate(load_images=True)
     openingTree = Tree()
     selected_piece = None
     gs.draw_board(WINDOW)
