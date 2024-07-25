@@ -12,13 +12,14 @@ from pieces.queen import Queen
 from src.Openings.openingtree import Tree
 
 
-def mop_up_eval(white_material_value: int, black_material_value: int, white_king: King, black_king: King, endgame_weight: float):
+def mop_up_eval(white_material_value: int, black_material_value: int, white_king: King, black_king: King,
+                endgame_weight: float):
     PawnValue = 100
     # As game transitions to endgame, and if up material, then encourage moving king closer to opponent king
-    if white_material_value > black_material_value + 2*PawnValue and endgame_weight > 0:
-        return int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
-    elif white_material_value < black_material_value - 2*PawnValue and endgame_weight > 0:
-        return -int(endgame_weight*4*(14-abs(white_king.i-black_king.i)-abs(white_king.j-black_king.j)))
+    if white_material_value > black_material_value + 2 * PawnValue and endgame_weight > 0:
+        return int(endgame_weight * 4 * (14 - abs(white_king.i - black_king.i) - abs(white_king.j - black_king.j)))
+    elif white_material_value < black_material_value - 2 * PawnValue and endgame_weight > 0:
+        return -int(endgame_weight * 4 * (14 - abs(white_king.i - black_king.i) - abs(white_king.j - black_king.j)))
     return 0
 
 
@@ -32,26 +33,27 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
     # Check safety of white king
     if white_king.i == 7:
         kingSafetyValueWhite = 90
-    if white_king.i-1 in white_pawn_positions.get(white_king.j, []):
+    if white_king.i - 1 in white_pawn_positions.get(white_king.j, []):
         kingSafetyValueWhite += 40
-    if white_king.i-1 in white_pawn_positions.get(white_king.j-1, []):
+    if white_king.i - 1 in white_pawn_positions.get(white_king.j - 1, []):
         kingSafetyValueWhite += 30
-    if white_king.i-1 in white_pawn_positions.get(white_king.j+1, []):
+    if white_king.i - 1 in white_pawn_positions.get(white_king.j + 1, []):
         kingSafetyValueWhite += 30
     output += kingSafetyValueWhite * weights[white_king.j]
     if black_king.i == 0:
         kingSafetyValueBlack = 90
-    if black_king.i+1 in black_pawn_positions.get(black_king.j, []):
+    if black_king.i + 1 in black_pawn_positions.get(black_king.j, []):
         kingSafetyValueBlack += 40
-    if black_king.i+1 in black_pawn_positions.get(black_king.j-1, []):
+    if black_king.i + 1 in black_pawn_positions.get(black_king.j - 1, []):
         kingSafetyValueBlack += 30
-    if black_king.i+1 in black_pawn_positions.get(black_king.j+1, []):
+    if black_king.i + 1 in black_pawn_positions.get(black_king.j + 1, []):
         kingSafetyValueBlack += 30
     return output - kingSafetyValueBlack * weights[black_king.j]
 
 
 class Gamestate:
-    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1, previous_states: ['Gamestate']=None):
+    def __init__(self, white_pieces=None, black_pieces=None, move=1, load_images=False, last_non_drawing_turn=1,
+                 previous_states: ['Gamestate'] = None):
         if black_pieces is None:
             black_pieces = []
         if white_pieces is None:
@@ -148,7 +150,6 @@ class Gamestate:
         # THREEPEAT RULE
         if self.previous_states.count(self) >= 3:
             return True
-
 
         # CHECK FOR INSUFFICIENT MATERIAL
         if len(self.black_pieces) == len(self.white_pieces) == 1:
@@ -264,6 +265,834 @@ will be ordered by captures, forward moves and ending with backwards moves
                 output.append(move)
         return output
 
+    def legal_moves_faster(self, colour):
+        output = []
+        if colour == WHITE:
+            for piece in self.white_pieces:
+                if piece.value == KING:
+                    for new_king in piece.generate_possible_moves():
+                        new_gs = Gamestate([new_king] + [wp for wp in self.white_pieces if wp != piece],
+                                           self.black_pieces, self.move + 1)
+                        if self.is_legal(new_gs) and self.get_piece(new_king.i, new_king.j, BLACK) is None :
+                            output.append(new_gs)
+                elif piece.value == KNIGHT:
+                    new_knights = piece.generate_possible_moves()
+                    test_gs_to_see_if_pinned = Gamestate(
+                        [new_knights[0]] + [wp for wp in self.white_pieces if wp != piece], self.black_pieces,
+                        self.move + 1)
+                    if self.is_legal(test_gs_to_see_if_pinned) and self.get_piece(new_knights[0].i, new_knights[0].j, BLACK) is None:
+                        output.append(test_gs_to_see_if_pinned)
+                        output += [Gamestate([new_knights[n]] + [wp for wp in self.white_pieces if wp != piece],
+                                             self.black_pieces, self.move + 1) for n in range(1, len(new_knights)) if self.get_piece(new_knights[n].i, new_knights[n].j) is None]
+                elif piece.value == PAWN:
+                    new_pawn = Pawn((piece.i-1, piece.j), WHITE, False)
+                    new_gs = Gamestate([new_pawn] + [wp for wp in self.white_pieces if wp != piece],
+                                           self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs):
+                        output.append(new_gs)
+                    if piece.i == 6:
+                        new_pawn2 = Pawn((piece.i - 2, piece.j), WHITE, True)
+                        new_gs2 = Gamestate([new_pawn2] + [wp for wp in self.white_pieces if wp != piece],
+                                           self.black_pieces, self.move + 1)
+                        if self.is_legal(new_gs2):
+                            output.append(new_gs2)
+                elif piece.value == ROOK:
+                    index_up = 1
+                    index_left = 1
+                    index_right = 1
+                    index_down = 1
+
+                    # UP
+                    new_gs = Gamestate(
+                        [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces if
+                                                                              wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, BLACK) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_up += 1
+                        while piece.i - index_up >= 0:
+                            if self.get_piece(piece.i - index_up, piece.j):
+                                break
+                            # elif self.get_piece(piece.i - index_up, piece.j, BLACK):
+                            #    CAPTURES WILL BE GENERATED BY GENERATE_CAPTURES
+                            #    new_gs = Gamestate(
+                            #        [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces
+                            #                                                              if wp != piece],
+                            #        self.black_pieces, self.move + 1)
+                            #    output.append(new_gs)
+                            #    break
+                            else:
+                                new_gs = Gamestate(
+                                    [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces
+                                                                                          if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_up += 1
+
+                    # DOWN
+                    new_gs = Gamestate(
+                        [Rook((piece.i + index_down, piece.j), WHITE, True)] + [wp for wp in self.white_pieces if
+                                                                                wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, BLACK) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_down += 1
+                        while piece.i + index_down < 8:
+                            if self.get_piece(piece.i + index_down, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Rook((piece.i + index_down, piece.j), WHITE, True)] + [wp for wp in
+                                                                                            self.white_pieces
+                                                                                            if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_down += 1
+
+                    # LEFT
+                    new_gs = Gamestate(
+                        [Rook((piece.i, piece.j - index_left), WHITE, True)] + [wp for wp in self.white_pieces if
+                                                                                wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j-index_left, BLACK) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_left += 1
+                        while piece.j - index_left >= 0:
+                            if self.get_piece(piece.i, piece.j - index_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Rook((piece.i, piece.j - index_left), WHITE, True)] + [wp for wp in
+                                                                                            self.white_pieces
+                                                                                            if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_left += 1
+
+                    # RIGHT
+                    new_gs = Gamestate(
+                        [Rook((piece.i, piece.j + index_right), WHITE, True)] + [wp for wp in self.white_pieces if
+                                                                                 wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, BLACK) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_right += 1
+                        while piece.j + index_right < 8:
+                            if self.get_piece(piece.i, piece.j + index_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Rook((piece.i, piece.j + index_right), WHITE, True)] + [wp for wp in
+                                                                                             self.white_pieces
+                                                                                             if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_right += 1
+
+                elif piece.value == BISHOP:
+                    index_top_right = 1
+                    index_bottom_right = 1
+                    index_top_left = 1
+                    index_bottom_left = 1
+
+                    # BOTTOM RIGHT
+                    new_gs = Gamestate(
+                        [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp for wp in
+                                                                                                         self.white_pieces
+                                                                                                         if
+                                                                                                         wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i+index_bottom_right, piece.j+index_bottom_right) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_right += 1
+                        while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
+                            if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp
+                                                                                                                     for
+                                                                                                                     wp
+                                                                                                                     in
+                                                                                                                     self.white_pieces
+                                                                                                                     if
+                                                                                                                     wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_right += 1
+
+                    # TOP RIGHT
+                    new_gs = Gamestate(
+                        [Bishop((piece.i - index_top_right, piece.j + index_top_right), WHITE)] + [wp for wp in
+                                                                                                   self.white_pieces
+                                                                                                   if
+                                                                                                   wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right, piece.j + index_top_right) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
+                            if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Bishop((piece.i - index_top_right, piece.j + index_top_right), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_top_right += 1
+
+                    # TOP LEFT
+                    new_gs = Gamestate(
+                        [Bishop((piece.i - index_top_left, piece.j - index_top_left), WHITE)] + [wp for wp in
+                                                                                                 self.white_pieces
+                                                                                                 if
+                                                                                                 wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left, piece.j - index_top_left) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
+                            if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Bishop((piece.i - index_top_left, piece.j - index_top_left), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_top_left += 1
+
+                    # BOTTOM LEFT
+                    new_gs = Gamestate(
+                        [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] + [wp for wp in
+                                                                                                       self.white_pieces
+                                                                                                       if
+                                                                                                       wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_left += 1
+                        while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
+                            if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_left += 1
+
+                else:
+                    # QUEEN
+                    index_up = 1
+                    index_left = 1
+                    index_right = 1
+                    index_down = 1
+                    index_top_right = 1
+                    index_bottom_right = 1
+                    index_top_left = 1
+                    index_bottom_left = 1
+
+                    # UP
+                    new_gs = Gamestate(
+                        [Queen((piece.i - index_up, piece.j), WHITE)] + [wp for wp in self.white_pieces if
+                                                                              wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, BLACK) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_up += 1
+                        while piece.i - index_up >= 0:
+                            if self.get_piece(piece.i - index_up, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i - index_up, piece.j), WHITE)] + [wp for wp in self.white_pieces
+                                                                                          if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_up += 1
+
+                    # DOWN
+                    new_gs = Gamestate(
+                        [Queen((piece.i + index_down, piece.j), WHITE)] + [wp for wp in self.white_pieces if
+                                                                                wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, BLACK) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_down += 1
+                        while piece.i + index_down < 8:
+                            if self.get_piece(piece.i + index_down, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i + index_down, piece.j), WHITE)] + [wp for wp in
+                                                                                            self.white_pieces
+                                                                                            if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_down += 1
+
+                    # LEFT
+                    new_gs = Gamestate(
+                        [Queen((piece.i, piece.j - index_left), WHITE)] + [wp for wp in self.white_pieces if
+                                                                                wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, BLACK) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_left += 1
+                        while piece.j - index_left >= 0:
+                            if self.get_piece(piece.i, piece.j - index_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i, piece.j - index_left), WHITE)] + [wp for wp in
+                                                                                            self.white_pieces
+                                                                                            if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_left += 1
+
+                    # RIGHT
+                    new_gs = Gamestate(
+                        [Queen((piece.i, piece.j + index_right), WHITE)] + [wp for wp in self.white_pieces if
+                                                                                 wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, BLACK) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_right += 1
+                        while piece.j + index_right < 8:
+                            if self.get_piece(piece.i, piece.j + index_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i, piece.j + index_right), WHITE)] + [wp for wp in
+                                                                                             self.white_pieces
+                                                                                             if wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_right += 1
+
+                    # BOTTOM RIGHT
+                    new_gs = Gamestate(
+                        [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp for wp in
+                                                                                                         self.white_pieces
+                                                                                                         if
+                                                                                                         wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
+                                                                piece.j + index_bottom_right) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_right += 1
+                        while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
+                            if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp
+                                                                                                                     for
+                                                                                                                     wp
+                                                                                                                     in
+                                                                                                                     self.white_pieces
+                                                                                                                     if
+                                                                                                                     wp != piece],
+                                    self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_right += 1
+
+                    # TOP RIGHT
+                    new_gs = Gamestate(
+                        [Queen((piece.i - index_top_right, piece.j + index_top_right), WHITE)] + [wp for wp in
+                                                                                                   self.white_pieces
+                                                                                                   if
+                                                                                                   wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
+                                                                piece.j + index_top_right) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
+                            if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i - index_top_right, piece.j + index_top_right), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_top_right += 1
+
+                    # TOP LEFT
+                    new_gs = Gamestate(
+                        [Queen((piece.i - index_top_left, piece.j - index_top_left), WHITE)] + [wp for wp in
+                                                                                                 self.white_pieces
+                                                                                                 if
+                                                                                                 wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
+                                                                piece.j - index_top_left) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
+                            if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i - index_top_left, piece.j - index_top_left), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_top_left += 1
+
+                    # BOTTOM LEFT
+                    new_gs = Gamestate(
+                        [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] + [wp for wp in
+                                                                                                       self.white_pieces
+                                                                                                       if
+                                                                                                       wp != piece],
+                        self.black_pieces, self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
+                                                                piece.j - index_bottom_left) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_left += 1
+                        while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
+                            if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
+                                break
+                            else:
+                                new_gs = Gamestate(
+                                    [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] +
+                                    [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_left += 1
+            return self.generate_captures(WHITE) + output
+
+        else:
+            for piece in self.black_pieces:
+                if piece.value == KING:
+                    for new_king in piece.generate_possible_moves():
+                        new_gs = Gamestate(self.white_pieces, [new_king] + [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                        if self.is_legal(new_gs) and self.get_piece(new_king.i, new_king.j, WHITE) is None:
+                            output.append(new_gs)
+                elif piece.value == KNIGHT:
+                    new_knights = piece.generate_possible_moves()
+                    test_gs_to_see_if_pinned = Gamestate(self.white_pieces,
+                        [new_knights[0]] + [bp for bp in self.black_pieces if bp != piece],
+                        self.move + 1)
+                    if self.is_legal(test_gs_to_see_if_pinned) and self.get_piece(new_knights[0].i, new_knights[0].j,
+                                                                                  WHITE) is None:
+                        output.append(test_gs_to_see_if_pinned)
+                        output += [Gamestate(self.white_pieces, [new_knights[n]] + [bp for bp in self.black_pieces if bp != piece]
+                                             , self.move + 1) for n in range(1, len(new_knights)) if
+                                   self.get_piece(new_knights[n].i, new_knights[n].j) is None]
+                elif piece.value == PAWN:
+                    new_pawn = Pawn((piece.i + 1, piece.j), BLACK, False)
+                    new_gs = Gamestate(self.white_pieces, [new_pawn] + [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                    if self.is_legal(new_gs):
+                        output.append(new_gs)
+                    if piece.i == 1:
+                        new_pawn2 = Pawn((piece.i + 2, piece.j), BLACK, True)
+                        new_gs2 = Gamestate(self.white_pieces, [new_pawn2] + [bp for bp in self.black_pieces if bp != piece],
+                                            self.move + 1)
+                        if self.is_legal(new_gs2):
+                            output.append(new_gs2)
+                elif piece.value == ROOK:
+                    index_up = 1
+                    index_left = 1
+                    index_right = 1
+                    index_down = 1
+
+                    # UP
+                    new_gs = Gamestate(self.white_pieces,
+                        [Rook((piece.i - index_up, piece.j), BLACK, True)] + [bp for bp in self.black_pieces if
+                                                                              bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, WHITE) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_up += 1
+                        while piece.i - index_up >= 0:
+                            if self.get_piece(piece.i - index_up, piece.j):
+                                break
+                            # elif self.get_piece(piece.i - index_up, piece.j, BLACK):
+                            #    CAPTURES WILL BE GENERATED BY GENERATE_CAPTURES
+                            #    new_gs = Gamestate(
+                            #        [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces
+                            #                                                              if wp != piece],
+                            #        self.black_pieces, self.move + 1)
+                            #    output.append(new_gs)
+                            #    break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Rook((piece.i - index_up, piece.j), BLACK, True)] + [bp for bp in self.black_pieces
+                                                                                          if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_up += 1
+
+                    # DOWN
+                    new_gs = Gamestate(self.white_pieces,
+                        [Rook((piece.i + index_down, piece.j), BLACK, True)] + [bp for bp in self.black_pieces if
+                                                                                bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, WHITE) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_down += 1
+                        while piece.i + index_down < 8:
+                            if self.get_piece(piece.i + index_down, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Rook((piece.i + index_down, piece.j), BLACK, True)] + [bp for bp in
+                                                                                            self.black_pieces
+                                                                                            if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_down += 1
+
+                    # LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Rook((piece.i, piece.j - index_left), BLACK, True)] + [bp for bp in self.black_pieces if
+                                                                                bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, WHITE) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_left += 1
+                        while piece.j - index_left >= 0:
+                            if self.get_piece(piece.i, piece.j - index_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Rook((piece.i, piece.j - index_left), BLACK, True)] + [bp for bp in
+                                                                                            self.black_pieces
+                                                                                            if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_left += 1
+
+                    # RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Rook((piece.i, piece.j + index_right), BLACK, True)] + [bp for bp in self.black_pieces if
+                                                                                 bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, WHITE) is None:
+                        # ROOK IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_right += 1
+                        while piece.j + index_right < 8:
+                            if self.get_piece(piece.i, piece.j + index_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Rook((piece.i, piece.j + index_right), BLACK, True)] + [bp for bp in
+                                                                                             self.black_pieces
+                                                                                             if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_right += 1
+
+                elif piece.value == BISHOP:
+                    index_top_right = 1
+                    index_bottom_right = 1
+                    index_top_left = 1
+                    index_bottom_left = 1
+
+                    # BOTTOM RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp for bp in
+                                                                                                         self.black_pieces
+                                                                                                         if
+                                                                                                         bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
+                                                                piece.j + index_bottom_right, WHITE) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_right += 1
+                        while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
+                            if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp
+                                                                                                                     for
+                                                                                                                     bp
+                                                                                                                     in
+                                                                                                                     self.black_pieces
+                                                                                                                     if
+                                                                                                                     bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_right += 1
+
+                    # TOP RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Bishop((piece.i - index_top_right, piece.j + index_top_right), BLACK)] + [bp for bp in
+                                                                                                   self.black_pieces
+                                                                                                   if
+                                                                                                   bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
+                                                                piece.j + index_top_right, WHITE) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
+                            if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Bishop((piece.i - index_top_right, piece.j + index_top_right), BLACK)] +
+                                    [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_top_right += 1
+
+                    # TOP LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Bishop((piece.i - index_top_left, piece.j - index_top_left), BLACK)] + [bp for bp in
+                                                                                                 self.black_pieces
+                                                                                                 if
+                                                                                                 bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
+                                                                piece.j - index_top_left, WHITE) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
+                            if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Bishop((piece.i - index_top_left, piece.j - index_top_left), BLACK)] +
+                                    [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_top_left += 1
+
+                    # BOTTOM LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] + [bp for bp in
+                                                                                                       self.black_pieces
+                                                                                                       if
+                                                                                                       bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
+                                                                piece.j - index_bottom_left, WHITE) is None:
+                        # BISHOP IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_left += 1
+                        while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
+                            if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] +
+                                    [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_left += 1
+
+                else:
+                    # QUEEN
+                    index_up = 1
+                    index_left = 1
+                    index_right = 1
+                    index_down = 1
+                    index_top_right = 1
+                    index_bottom_right = 1
+                    index_top_left = 1
+                    index_bottom_left = 1
+
+                    # UP
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i - index_up, piece.j), BLACK)] + [bp for bp in self.black_pieces if
+                                                                         bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, WHITE) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_up += 1
+                        while piece.i - index_up >= 0:
+                            if self.get_piece(piece.i - index_up, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i - index_up, piece.j), BLACK)] + [bp for bp in self.black_pieces
+                                                                                     if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_up += 1
+
+                    # DOWN
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i + index_down, piece.j), BLACK)] + [bp for bp in self.black_pieces if
+                                                                           bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, WHITE) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_down += 1
+                        while piece.i + index_down < 8:
+                            if self.get_piece(piece.i + index_down, piece.j):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i + index_down, piece.j), BLACK)] + [bp for bp in
+                                                                                       self.black_pieces
+                                                                                       if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_down += 1
+
+                    # LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i, piece.j - index_left), BLACK)] + [bp for bp in self.black_pieces if
+                                                                           bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, WHITE) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_left += 1
+                        while piece.j - index_left >= 0:
+                            if self.get_piece(piece.i, piece.j - index_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i, piece.j - index_left), BLACK)] + [bp for bp in
+                                                                                       self.black_pieces
+                                                                                       if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_left += 1
+
+                    # RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i, piece.j + index_right), BLACK)] + [bp for bp in self.black_pieces if
+                                                                            bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, WHITE) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_right += 1
+                        while piece.j + index_right < 8:
+                            if self.get_piece(piece.i, piece.j + index_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i, piece.j + index_right), BLACK)] + [bp for bp in
+                                                                                        self.black_pieces
+                                                                                        if bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_right += 1
+
+                    # BOTTOM RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp for bp in
+                                                                                                        self.black_pieces
+                                                                                                        if
+                                                                                                        bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
+                                                                piece.j + index_bottom_right) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_right += 1
+                        while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
+                            if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp
+                                                                                                                    for
+                                                                                                                    bp
+                                                                                                                    in
+                                                                                                                    self.black_pieces
+                                                                                                                    if
+                                                                                                                    bp != piece],
+                                    self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_right += 1
+
+                    # TOP RIGHT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i - index_top_right, piece.j + index_top_right), BLACK)] + [bp for bp in
+                                                                                                  self.black_pieces
+                                                                                                  if
+                                                                                                  bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
+                                                                piece.j + index_top_right) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
+                            if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i - index_top_right, piece.j + index_top_right), BLACK)] +
+                                    [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_top_right += 1
+
+                    # TOP LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i - index_top_left, piece.j - index_top_left), BLACK)] + [bp for bp in
+                                                                                                self.black_pieces
+                                                                                                if
+                                                                                                bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
+                                                                piece.j - index_top_left) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_top_right += 1
+                        while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
+                            if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i - index_top_left, piece.j - index_top_left), BLACK)] +
+                                    [bp for bp in self.white_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_top_left += 1
+
+                    # BOTTOM LEFT
+                    new_gs = Gamestate(self.white_pieces,
+                        [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] + [bp for bp in
+                                                                                                      self.black_pieces
+                                                                                                      if
+                                                                                                      bp != piece],
+                        self.move + 1)
+                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
+                                                                piece.j - index_bottom_left) is None:
+                        # QUEEN IS NOT PINNED IN THIS DIRECTION
+                        output.append(new_gs)
+                        index_bottom_left += 1
+                        while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
+                            if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
+                                break
+                            else:
+                                new_gs = Gamestate(self.white_pieces,
+                                    [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] +
+                                    [bp for bp in self.black_pieces if bp != piece], self.move + 1)
+                                output.append(new_gs)
+                                index_bottom_left += 1
+            return self.generate_captures(BLACK) + output
+
     def king_under_attack(self, colour):
         """
 Checks if the king of team 'colour' is in check
@@ -274,9 +1103,12 @@ Checks if the king of team 'colour' is in check
         for piece in self.white_pieces:
             if piece.colour == colour and piece.value == KING:
                 king = piece
-        for piece in self.black_pieces:
-            if piece.colour == colour and piece.value == KING:
-                king = piece
+                break
+        if king is None:
+            for piece in self.black_pieces:
+                if piece.colour == colour and piece.value == KING:
+                    king = piece
+                    break
         if king is None:
             raise Exception
         # Check if a rook or queen can attack king from horizontal line
@@ -815,16 +1647,20 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         if colour == WHITE:
             for piece in self.white_pieces:
                 if piece.value == PAWN:
-                    possible_en_passanted_pawn_right = self.get_piece(piece.i, piece.j+1, BLACK)
+                    possible_en_passanted_pawn_right = self.get_piece(piece.i, piece.j + 1, BLACK)
                     possible_en_passanted_pawn_left = self.get_piece(piece.i, piece.j - 1, BLACK)
-                    if self.get_piece(piece.i-1, piece.j+1, BLACK) is not None or (possible_en_passanted_pawn_right is not None and possible_en_passanted_pawn_right.value == PAWN and possible_en_passanted_pawn_right.en_passantable):
-                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [Pawn((piece.i-1, piece.j+1), WHITE)]
-                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
+                    if self.get_piece(piece.i - 1, piece.j + 1, BLACK) is not None or (
+                            possible_en_passanted_pawn_right is not None and possible_en_passanted_pawn_right.value == PAWN and possible_en_passanted_pawn_right.en_passantable):
+                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [
+                            Pawn((piece.i - 1, piece.j + 1), WHITE)]
+                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.move)
                         if self.is_legal(new_gs):
                             pawn_captures += [new_gs]
-                    if self.get_piece(piece.i-1, piece.j-1, BLACK) is not None or (possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
-                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [Pawn((piece.i-1, piece.j-1), WHITE)]
-                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move+1, False, self.move)
+                    if self.get_piece(piece.i - 1, piece.j - 1, BLACK) is not None or (
+                            possible_en_passanted_pawn_left is not None and possible_en_passanted_pawn_left.value == PAWN and possible_en_passanted_pawn_left.en_passantable):
+                        white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [
+                            Pawn((piece.i - 1, piece.j - 1), WHITE)]
+                        new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.move)
                         if self.is_legal(new_gs):
                             pawn_captures += [new_gs]
 
@@ -833,15 +1669,17 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                         if self.get_piece(position.i, position.j, BLACK) is not None:
                             white_pieces = [temp_piece for temp_piece in self.white_pieces if temp_piece != piece] + [
                                 position]
-                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False, self.last_non_drawing_turn)
+                            new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
+                                               self.last_non_drawing_turn)
                             if self.is_legal(new_gs):
                                 knight_captures += [new_gs]
 
                 elif piece.value == BISHOP:
                     for temp_piece in self.black_pieces:
-                        if abs(piece.i-temp_piece.i) == abs(piece.j-temp_piece.j):
-                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if temp2_piece != piece] + [
-                                Bishop((temp_piece.i, temp_piece.j), WHITE)]
+                        if abs(piece.i - temp_piece.i) == abs(piece.j - temp_piece.j):
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if
+                                            temp2_piece != piece] + [
+                                               Bishop((temp_piece.i, temp_piece.j), WHITE)]
                             new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
                                                self.last_non_drawing_turn)
                             if self.is_legal(new_gs):
@@ -858,7 +1696,8 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                                 rook_captures += [new_gs]
                 elif piece.value == QUEEN:
                     for temp_piece in self.black_pieces:
-                        if piece.i == temp_piece.i or piece.j == temp_piece.j or abs(piece.i-temp_piece.i) == abs(piece.j-temp_piece.j):
+                        if piece.i == temp_piece.i or piece.j == temp_piece.j or abs(piece.i - temp_piece.i) == abs(
+                                piece.j - temp_piece.j):
                             white_pieces = [temp2_piece for temp2_piece in self.white_pieces if
                                             temp2_piece != piece] + [
                                                Queen((temp_piece.i, temp_piece.j), WHITE)]
@@ -868,9 +1707,10 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
                                 queen_captures += [new_gs]
                 else:
                     for temp_piece in self.black_pieces:
-                        if abs(piece.i-temp_piece.i) <= 1 and abs(piece.j-temp_piece.j) <= 1:
-                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if temp2_piece != piece] + [
-                                King((temp_piece.i, temp_piece.j), WHITE, True)]
+                        if abs(piece.i - temp_piece.i) <= 1 and abs(piece.j - temp_piece.j) <= 1:
+                            white_pieces = [temp2_piece for temp2_piece in self.white_pieces if
+                                            temp2_piece != piece] + [
+                                               King((temp_piece.i, temp_piece.j), WHITE, True)]
                             new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
                                                self.last_non_drawing_turn)
                             if self.is_legal(new_gs):
@@ -956,21 +1796,21 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
 A function that returns ALL possible gamestates after colour makes a move
         :param return_moved_pieces: List to return the new Gamestate and the moved piece
         :param colour: WHITE or BLACK
-        :return: list[Gamestate] or list[(Gamestate, Piece)]
+        :return: list[Gamestate] or list[(Gamestate, Piece, Piece)]
         """
         if return_moved_pieces:
             output = []
             if colour == WHITE:
                 for piece in self.white_pieces:
                     for new_possible_piece in piece.generate_possible_moves():
-                        new_gs = Gamestate([wp for wp in self.white_pieces if wp != piece] + [new_possible_piece],
-                                           self.black_pieces.copy(), self.move + 1)
+                        new_gs = Gamestate([new_possible_piece] + [wp for wp in self.white_pieces if wp != piece],
+                                           self.black_pieces, self.move + 1)
                         output.append((new_gs, piece, new_possible_piece))
             elif colour == BLACK:
                 for piece in self.black_pieces:
                     for new_possible_piece in piece.generate_possible_moves():
-                        new_gs = Gamestate(self.white_pieces.copy(),
-                                           [bp for bp in self.black_pieces if bp != piece] + [new_possible_piece],
+                        new_gs = Gamestate(self.white_pieces,
+                                           [new_possible_piece] + [bp for bp in self.black_pieces if bp != piece],
                                            self.move + 1)
                         output.append((new_gs, piece, new_possible_piece))
             return output
@@ -978,14 +1818,14 @@ A function that returns ALL possible gamestates after colour makes a move
         if colour == WHITE:
             for piece in self.white_pieces:
                 for new_possible_piece in piece.generate_possible_moves():
-                    new_gs = Gamestate([wp for wp in self.white_pieces if wp != piece] + [new_possible_piece],
-                                       self.black_pieces.copy(), self.move + 1)
+                    new_gs = Gamestate([new_possible_piece] + [wp for wp in self.white_pieces if wp != piece],
+                                       self.black_pieces, self.move + 1)
                     output.append(new_gs)
         elif colour == BLACK:
             for piece in self.black_pieces:
                 for new_possible_piece in piece.generate_possible_moves():
-                    new_gs = Gamestate(self.white_pieces.copy(),
-                                       [bp for bp in self.black_pieces if bp != piece] + [new_possible_piece],
+                    new_gs = Gamestate(self.white_pieces,
+                                       [new_possible_piece] + [bp for bp in self.black_pieces if bp != piece],
                                        self.move + 1)
                     output.append(new_gs)
         return output
@@ -1007,16 +1847,21 @@ removing captured elements and restoring en-passantable values for pawns of colo
         for piece in self.white_pieces:
             if piece not in target_gamestate.white_pieces:
                 moved_piece_old = piece
-        for piece in self.black_pieces:
-            if piece not in target_gamestate.black_pieces:
-                moved_piece_old = piece
+                break
+        if moved_piece_old is None:
+            for piece in self.black_pieces:
+                if piece not in target_gamestate.black_pieces:
+                    moved_piece_old = piece
+                    break
 
         for piece in target_gamestate.white_pieces:
             if piece not in self.white_pieces:
                 moved_piece_new = piece
-        for piece in target_gamestate.black_pieces:
-            if piece not in self.black_pieces:
-                moved_piece_new = piece
+                break
+        if moved_piece_new is None:
+            for piece in target_gamestate.black_pieces:
+                if piece not in self.black_pieces:
+                    moved_piece_new = piece
         if moved_piece_new.colour == BLACK:
             self.black_pieces = [moved_piece_new] + [piece for piece in self.black_pieces if piece != moved_piece_old]
             if moved_piece_old.value == KING and abs(moved_piece_new.j - moved_piece_old.j) == 2:
@@ -1154,7 +1999,8 @@ Returns a copy of a gamestate where every piece is a copy of one of the pieces o
                 new_black_pieces.append(Bishop((piece.i, piece.j), piece.colour))
             elif piece.value == KNIGHT:
                 new_black_pieces.append(Knight((piece.i, piece.j), piece.colour))
-        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn, self.previous_states)
+        return Gamestate(new_white_pieces, new_black_pieces, self.move, False, self.last_non_drawing_turn,
+                         self.previous_states)
 
     def computer_makes_move(self, version: int, tree: Tree = None):
         """
@@ -1487,7 +2333,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         black_king = None
         white_king = None
         output = 0
-        if self.move-self.last_non_drawing_turn >= 100:
+        if self.move - self.last_non_drawing_turn >= 100:
             return 0
         if self.previous_states.count(self) >= 3:
             return 0
@@ -1502,7 +2348,7 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             [280, 295, 300, 300, 300, 300, 295, 280],
             [280, 285, 290, 290, 290, 290, 285, 280],
             [280, 285, 290, 290, 290, 290, 285, 280]
-    ]
+        ]
         BishopValue = 310
         RookValue = 500
         QueenValue = 900
@@ -1551,26 +2397,31 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
             else:
                 black_king = piece
         if self.move % 2 == 0:
-            opponentMaterialCountWithoutPawns = len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue
+            opponentMaterialCountWithoutPawns = len(white_queens) * QueenValue + len(white_rooks) * RookValue + len(
+                white_bishops) * BishopValue + len(white_knights) * KnightValue
         else:
-            opponentMaterialCountWithoutPawns = len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
+            opponentMaterialCountWithoutPawns = len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(
+                black_bishops) * BishopValue + len(
                 black_knights) * KnightValue
         endgameWeight = 1 - min(1.0, opponentMaterialCountWithoutPawns / endgameMaterialStart)
         output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
         for bishop in white_bishops:
-            if (bishop.i == bishop.j or bishop.i == 7-bishop.j) and (bishop.j <= 1 or bishop.j <= 6):
+            if (bishop.i == bishop.j or bishop.i == 7 - bishop.j) and (bishop.j <= 1 or bishop.j <= 6):
                 output += BishopValue + 45
             else:
                 output += BishopValue
         for bishop in black_bishops:
-            if bishop.i == bishop.j or bishop.i == 7-bishop.j:
+            if bishop.i == bishop.j or bishop.i == 7 - bishop.j:
                 output = output - (BishopValue + 45)
             else:
                 output -= BishopValue
         output += (len(white_queens) - len(black_queens)) * QueenValue
         output += (len(white_rooks) - len(black_rooks)) * RookValue
-        output += mop_up_eval(len(white_queens)*QueenValue + len(white_rooks)*RookValue + len(white_bishops)*BishopValue + len(white_knights)*KnightValue + len(white_pawns)*PawnValue, len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
-                black_knights) * KnightValue + len(black_pawns)*PawnValue, white_king, black_king, endgameWeight)
+        output += mop_up_eval(
+            len(white_queens) * QueenValue + len(white_rooks) * RookValue + len(white_bishops) * BishopValue + len(
+                white_knights) * KnightValue + len(white_pawns) * PawnValue,
+            len(black_queens) * QueenValue + len(black_rooks) * RookValue + len(black_bishops) * BishopValue + len(
+                black_knights) * KnightValue + len(black_pawns) * PawnValue, white_king, black_king, endgameWeight)
         output += king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, black_king, endgameWeight)
         return output
 
@@ -1625,7 +2476,8 @@ A heuristic function to make a guess on evaluation of current position without r
                 return new_gs
             elif move_str[0] == "R":
                 for move in self.legal_moves(WHITE):
-                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], WHITE)
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]],
+                                                          WHITE)
                     if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
                         return move
             elif move_str[0] == "B":
@@ -1636,7 +2488,8 @@ A heuristic function to make a guess on evaluation of current position without r
                 return new_gs
             elif move_str[0] == "N":
                 for move in self.legal_moves(WHITE):
-                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], WHITE)
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]],
+                                                          WHITE)
                     if possible_moved_piece is not None and possible_moved_piece.value == KNIGHT:
                         return move
             elif move_str == "O-O":
@@ -1656,12 +2509,14 @@ A heuristic function to make a guess on evaluation of current position without r
                     for piece in self.white_pieces:
                         if piece.value == PAWN and piece.j == column_to_index[move_str[-2]] and (
                                 piece.i == row_to_index[move_str[-1]] + 1 or (
-                                piece.i == row_to_index[move_str[-1]] + 2 and self.get_piece(piece.i - 1, piece.j) is None)):
+                                piece.i == row_to_index[move_str[-1]] + 2 and self.get_piece(piece.i - 1,
+                                                                                             piece.j) is None)):
                             moved_pawn = piece
                             if piece.i == row_to_index[move_str[-1]] + 2:
                                 double_jump = True
                     white_pieces = [piece for piece in self.white_pieces if piece != moved_pawn] + \
-                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE, double_jump)]
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE,
+                                         double_jump)]
                     new_gs = Gamestate(white_pieces, self.black_pieces, self.move + 1, False,
                                        self.last_non_drawing_turn)
                     return new_gs
@@ -1669,7 +2524,8 @@ A heuristic function to make a guess on evaluation of current position without r
                     # capture
                     moved_pawn = None
                     for piece in self.white_pieces:
-                        if piece.value == PAWN and piece.j == column_to_index[move_str[0]] and piece.i == row_to_index[move_str[-1]] + 1:
+                        if piece.value == PAWN and piece.j == column_to_index[move_str[0]] and piece.i == row_to_index[
+                            move_str[-1]] + 1:
                             moved_pawn = piece
                     white_pieces = [piece for piece in self.white_pieces if piece != moved_pawn] + \
                                    [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), WHITE,
@@ -1691,7 +2547,8 @@ A heuristic function to make a guess on evaluation of current position without r
                 return new_gs
             elif move_str[0] == "R":
                 for move in self.legal_moves(BLACK):
-                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], BLACK)
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]],
+                                                          BLACK)
                     if possible_moved_piece is not None and possible_moved_piece.value == ROOK:
                         return move
             elif move_str[0] == "B":
@@ -1702,7 +2559,8 @@ A heuristic function to make a guess on evaluation of current position without r
                 return new_gs
             elif move_str[0] == "N":
                 for move in self.legal_moves(BLACK):
-                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]], BLACK)
+                    possible_moved_piece = move.get_piece(row_to_index[move_str[-1]], column_to_index[move_str[-2]],
+                                                          BLACK)
                     if possible_moved_piece is not None and possible_moved_piece.value == KNIGHT:
                         return move
             elif move_str == "O-O":
@@ -1722,12 +2580,14 @@ A heuristic function to make a guess on evaluation of current position without r
                     for piece in self.black_pieces:
                         if piece.value == PAWN and piece.j == column_to_index[move_str[-2]] and (
                                 piece.i == row_to_index[move_str[-1]] - 1 or (
-                                piece.i == row_to_index[move_str[-1]] - 2 and self.get_piece(piece.i + 1, piece.j) is None)):
+                                piece.i == row_to_index[move_str[-1]] - 2 and self.get_piece(piece.i + 1,
+                                                                                             piece.j) is None)):
                             moved_pawn = piece
                             if piece.i == row_to_index[move_str[-1]] - 2:
                                 double_jump = True
                     black_pieces = [piece for piece in self.black_pieces if piece != moved_pawn] + \
-                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK, double_jump)]
+                                   [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK,
+                                         double_jump)]
                     new_gs = Gamestate(self.white_pieces, black_pieces, self.move + 1, False,
                                        self.last_non_drawing_turn)
                     return new_gs
@@ -1735,7 +2595,7 @@ A heuristic function to make a guess on evaluation of current position without r
                     moved_pawn = None
                     for piece in self.black_pieces:
                         if piece.value == PAWN and piece.j == column_to_index[move_str[0]] and piece.i == row_to_index[
-                                move_str[-1]] - 1:
+                            move_str[-1]] - 1:
                             moved_pawn = piece
                     black_pieces = [piece for piece in self.black_pieces if piece != moved_pawn] + \
                                    [Pawn((row_to_index[move_str[-1]], column_to_index[move_str[-2]]), BLACK,
@@ -1750,7 +2610,7 @@ A heuristic function to make a guess on evaluation of current position without r
         depth = 1
         ordered_moves = None
 
-        while time()-start_time<1:
+        while time() - start_time < 1:
             # print(depth)
             if self.move % 2 == 1:
                 # WHITE'S TURN
@@ -1823,7 +2683,7 @@ A heuristic function to make a guess on evaluation of current position without r
         depth = 1
         ordered_moves = None
 
-        while time() - start_time < MAX_TIME or depth <= 5:
+        while time() - start_time < MAX_TIME:
             print(f'Performing iterative deepening with depth {depth}')
             if self.move % 2 == 1:
                 # WHITE'S TURN
@@ -1831,7 +2691,7 @@ A heuristic function to make a guess on evaluation of current position without r
             else:
                 # BLACK'S TURN
                 _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves)
-            depth += 1
+            depth += 2
         if ordered_moves:
             self.update(ordered_moves[0][1])
         else:
@@ -1932,25 +2792,29 @@ def evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_po
     isolatedCountWhite = 0
     isolatedCountBlack = 0
 
-    output += (len(white_pawns) - len(black_pawns))*PawnValue
+    output += (len(white_pawns) - len(black_pawns)) * PawnValue
     for column in white_pawn_positions:
         for rij in white_pawn_positions[column]:
             # Promote passed pawns
-            if not ((column in black_pawn_positions and min(black_pawn_positions[column]) < rij) or ((column-1) in black_pawn_positions and min(black_pawn_positions[column-1]) < rij) or ((column+1) in black_pawn_positions and min(black_pawn_positions[column+1]) < rij)):
+            if not ((column in black_pawn_positions and min(black_pawn_positions[column]) < rij) or (
+                    (column - 1) in black_pawn_positions and min(black_pawn_positions[column - 1]) < rij) or (
+                            (column + 1) in black_pawn_positions and min(black_pawn_positions[column + 1]) < rij)):
                 output += passedPawnBonuses[rij]
 
             # Punish isolated pawns
-            if not ((column+1) in white_pawn_positions or (column-1) in white_pawn_positions):
+            if not ((column + 1) in white_pawn_positions or (column - 1) in white_pawn_positions):
                 isolatedCountWhite += 1
 
     for column in black_pawn_positions:
         for rij in black_pawn_positions[column]:
             # Promote passed pawns
-            if not ((column in white_pawn_positions and max(white_pawn_positions[column]) > rij) or ((column-1) in white_pawn_positions and max(white_pawn_positions[column-1]) > rij) or ((column+1) in white_pawn_positions and max(white_pawn_positions[column+1]) > rij)):
-                output -= passedPawnBonuses[7-rij]
+            if not ((column in white_pawn_positions and max(white_pawn_positions[column]) > rij) or (
+                    (column - 1) in white_pawn_positions and max(white_pawn_positions[column - 1]) > rij) or (
+                            (column + 1) in white_pawn_positions and max(white_pawn_positions[column + 1]) > rij)):
+                output -= passedPawnBonuses[7 - rij]
 
             # Punish isolated pawns
-            if not ((column+1) in black_pawn_positions or (column-1) in black_pawn_positions):
+            if not ((column + 1) in black_pawn_positions or (column - 1) in black_pawn_positions):
                 isolatedCountBlack += 1
 
     output += isolatedPawnPenaltyByCount[isolatedCountWhite] - isolatedPawnPenaltyByCount[isolatedCountBlack]

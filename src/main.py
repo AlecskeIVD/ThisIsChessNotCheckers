@@ -30,6 +30,8 @@ def main(version: int = 0):
     gs = Gamestate(load_images=True)
     # gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
     openingTree = Tree()
+    gs.computer_makes_move(7, openingTree)
+    gs.white_wins()
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
@@ -57,6 +59,7 @@ def main(version: int = 0):
                     run = False
                     print("The game has ended in a draw")
                     sleep(3)
+                print(f"Turn {gs.move // 2}: Current evaluation is {gs.evaluate_better()}")
             if event.type == pg.MOUSEBUTTONDOWN:
                 pos = pg.mouse.get_pos()
                 i = pos[1] // SQUAREWIDTH
