@@ -457,7 +457,7 @@ will be ordered by captures, forward moves and ending with backwards moves
                     if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left, piece.j - index_top_left) is None:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
                         output.append(new_gs)
-                        index_top_right += 1
+                        index_top_left += 1
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break
@@ -644,7 +644,7 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                 piece.j - index_top_left) is None:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
                         output.append(new_gs)
-                        index_top_right += 1
+                        index_top_left += 1
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break

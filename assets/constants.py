@@ -62,3 +62,4 @@ column_to_index = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 
 row_to_index = {}
 for row in range(1, 9):
     row_to_index[str(row)] = 8-row
+value_to_name = {PAWN: "pawn", KNIGHT: "knight", BISHOP: "bishop", ROOK: "rook", QUEEN: "queen", KING: "king"}

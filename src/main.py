@@ -16,7 +16,6 @@ WINDOW = pg.display.set_mode((WIDTH, HEIGHT))
 pg.display.set_caption("Chess")
 
 # Dictionaries for translating pieces to human-readable names
-value_to_name = {PAWN: "pawn", KNIGHT: "knight", BISHOP: "bishop", ROOK: "rook", QUEEN: "queen", KING: "king"}
 rgb_to_colour = {WHITE: "white", BLACK: "black"}
 index_to_column = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
 index_to_row = {}
@@ -27,11 +26,32 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate(load_images=True)
+    # gs = Gamestate(load_images=True)
     # gs = Gamestate([(King((3, 3), WHITE, True))], [King((7, 0), BLACK, True), Rook((7, 1), BLACK)], move=16, load_images=True)
+    white_pieces = [Rook(BP_WLROOK, WHITE), Rook(BP_WRROOK, WHITE), Knight(BP_WLKNIGHT, WHITE),
+                    Knight(BP_WRKNIGHT, WHITE), Bishop(BP_WLBISHOP, WHITE), Bishop(BP_WRBISHOP, WHITE),
+                    Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE)]
+    for i in range(COLUMNS):
+        if i!=4:
+            white_pieces.append(Pawn((ROWS - 2, i), WHITE))
+        else:
+            white_pieces.append(Pawn((ROWS - 4, 4), WHITE, True))
+    white_pieces.reverse()  # To promote pawn moves in opening
+
+    black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK), Knight(BP_BLKNIGHT, BLACK),
+                    Knight(BP_BRKNIGHT, BLACK), Bishop(BP_BLBISHOP, BLACK), Bishop(BP_BRBISHOP, BLACK),
+                    Queen(BP_BQUEEN, BLACK), King(BP_BKING, BLACK)]
+    for i in range(COLUMNS):
+        if i != 4:
+            black_pieces.append(Pawn((1, i), BLACK))
+        else:
+            black_pieces.append(Pawn((3, i), BLACK, True))
+    # To promote pawn moves in opening
+    black_pieces.reverse()
+    gs = Gamestate(white_pieces, black_pieces, load_images=True)
+    temp0 = gs.legal_moves(WHITE, True)
+    temp = gs.legal_moves_faster(WHITE)
     openingTree = Tree()
-    gs.computer_makes_move(7, openingTree)
-    gs.white_wins()
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
@@ -99,6 +119,28 @@ def main(version: int = 0):
                                 selected_piece = None
                     gs.draw_board(WINDOW)
                     pg.display.update()
+                    start = time()
+                    am = gs.legal_moves(WHITE if gs.move % 2 == 1 else BLACK, True)
+                    duration = time()-start
+                    print(f'It took {duration} seconds to generate all {len(am)} moves according to original function')
+
+                    start = time()
+                    nm = gs.legal_moves_faster(WHITE if gs.move % 2 == 1 else BLACK)
+                    duration = time() - start
+                    print(f'It took {duration} seconds to generate all {len(nm)} moves according to new function')
+                    print(f'Amount of captures possible: {len(gs.generate_captures(WHITE if gs.move % 2 == 1 else BLACK))}')
+                    correct_moves = []
+                    if len(nm) != len(am):
+                        for move in nm:
+                            if move not in correct_moves:
+                                correct_moves.append(move)
+                            else:
+                                for piece in move.white_pieces:
+                                    print(str(piece), end=", ")
+                                print("")
+                                for piece in move.black_pieces:
+                                    print(str(piece), end=", ")
+                                print("")
                     selected_piece = None
                     if gs.white_wins():
                         run = False
