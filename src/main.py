@@ -95,37 +95,6 @@ def main(version: int = 0):
                                 selected_piece = None
                     gs.draw_board(WINDOW)
                     pg.display.update()
-                    start = time()
-                    am = gs.legal_moves(WHITE if gs.move % 2 == 1 else BLACK, True)
-                    duration = time()-start
-                    print(f'It took {duration} seconds to generate all {len(am)} moves according to original function')
-
-                    start = time()
-                    nm = gs.legal_moves_faster(WHITE if gs.move % 2 == 1 else BLACK)
-                    duration = time() - start
-                    print(f'It took {duration} seconds to generate all {len(nm)} moves according to new function')
-                    print(f'Amount of captures possible: {len(gs.generate_captures(WHITE if gs.move % 2 == 1 else BLACK))}')
-                    correct_moves = []
-                    if len(nm) != len(am):
-                        for move in nm:
-                            if move not in correct_moves:
-                                correct_moves.append(move)
-                            else:
-                                for piece in move.white_pieces:
-                                    print(str(piece), end=", ")
-                                print("")
-                                for piece in move.black_pieces:
-                                    print(str(piece), end=", ")
-                                print("")
-                        correct_moves = []
-                        for move in am:
-                            if move not in nm:
-                                for piece in move.white_pieces:
-                                    print(str(piece), end=", ")
-                                print("")
-                                for piece in move.black_pieces:
-                                    print(str(piece), end=", ")
-                                print("")
                     selected_piece = None
                     if gs.white_wins():
                         run = False
