@@ -276,14 +276,11 @@ will be ordered by captures, forward moves and ending with backwards moves
                         if self.is_legal(new_gs) and self.get_piece(new_king.i, new_king.j, BLACK) is None :
                             output.append(new_gs)
                 elif piece.value == KNIGHT:
-                    new_knights = piece.generate_possible_moves()
-                    test_gs_to_see_if_pinned = Gamestate(
-                        [new_knights[0]] + [wp for wp in self.white_pieces if wp != piece], self.black_pieces,
-                        self.move + 1)
-                    if self.is_legal(test_gs_to_see_if_pinned) and self.get_piece(new_knights[0].i, new_knights[0].j, BLACK) is None:
-                        output.append(test_gs_to_see_if_pinned)
-                        output += [Gamestate([new_knights[n]] + [wp for wp in self.white_pieces if wp != piece],
-                                             self.black_pieces, self.move + 1) for n in range(1, len(new_knights)) if self.get_piece(new_knights[n].i, new_knights[n].j) is None]
+                    for temp_knight in piece.generate_possible_moves():
+                        temp_gs = Gamestate([temp_knight] + [wp for wp in self.white_pieces if wp != piece],
+                                           self.black_pieces, self.move + 1)
+                        if self.is_legal(temp_gs) and self.get_piece(temp_knight.i, temp_knight.j, BLACK) is None:
+                            output.append(temp_gs)
                 elif piece.value == PAWN:
                     new_pawn = Pawn((piece.i-1, piece.j), WHITE, False)
                     new_gs = Gamestate([new_pawn] + [wp for wp in self.white_pieces if wp != piece],
@@ -303,14 +300,7 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_down = 1
 
                     # UP
-                    new_gs = Gamestate(
-                        [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces if
-                                                                              wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, BLACK) is None:
-                        # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_up += 1
+                    if True:
                         while piece.i - index_up >= 0:
                             if self.get_piece(piece.i - index_up, piece.j):
                                 break
@@ -327,18 +317,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                     [Rook((piece.i - index_up, piece.j), WHITE, True)] + [wp for wp in self.white_pieces
                                                                                           if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_up += 1
 
                     # DOWN
-                    new_gs = Gamestate(
-                        [Rook((piece.i + index_down, piece.j), WHITE, True)] + [wp for wp in self.white_pieces if
-                                                                                wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, BLACK) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_down += 1
                         while piece.i + index_down < 8:
                             if self.get_piece(piece.i + index_down, piece.j):
                                 break
@@ -348,18 +333,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.white_pieces
                                                                                             if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_down += 1
 
                     # LEFT
-                    new_gs = Gamestate(
-                        [Rook((piece.i, piece.j - index_left), WHITE, True)] + [wp for wp in self.white_pieces if
-                                                                                wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j-index_left, BLACK) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_left += 1
                         while piece.j - index_left >= 0:
                             if self.get_piece(piece.i, piece.j - index_left):
                                 break
@@ -369,18 +349,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.white_pieces
                                                                                             if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_left += 1
 
                     # RIGHT
-                    new_gs = Gamestate(
-                        [Rook((piece.i, piece.j + index_right), WHITE, True)] + [wp for wp in self.white_pieces if
-                                                                                 wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, BLACK) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_right += 1
                         while piece.j + index_right < 8:
                             if self.get_piece(piece.i, piece.j + index_right):
                                 break
@@ -390,7 +365,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                              self.white_pieces
                                                                                              if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_right += 1
 
                 elif piece.value == BISHOP:
@@ -400,16 +376,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_bottom_left = 1
 
                     # BOTTOM RIGHT
-                    new_gs = Gamestate(
-                        [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp for wp in
-                                                                                                         self.white_pieces
-                                                                                                         if
-                                                                                                         wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i+index_bottom_right, piece.j+index_bottom_right) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_right += 1
                         while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
                             if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
                                 break
@@ -423,20 +391,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                                                      if
                                                                                                                      wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_bottom_right += 1
 
                     # TOP RIGHT
-                    new_gs = Gamestate(
-                        [Bishop((piece.i - index_top_right, piece.j + index_top_right), WHITE)] + [wp for wp in
-                                                                                                   self.white_pieces
-                                                                                                   if
-                                                                                                   wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right, piece.j + index_top_right) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
                         while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
                             if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
                                 break
@@ -444,20 +405,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Bishop((piece.i - index_top_right, piece.j + index_top_right), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_top_right += 1
 
                     # TOP LEFT
-                    new_gs = Gamestate(
-                        [Bishop((piece.i - index_top_left, piece.j - index_top_left), WHITE)] + [wp for wp in
-                                                                                                 self.white_pieces
-                                                                                                 if
-                                                                                                 wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left, piece.j - index_top_left) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_left += 1
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break
@@ -465,20 +419,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Bishop((piece.i - index_top_left, piece.j - index_top_left), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_top_left += 1
 
                     # BOTTOM LEFT
-                    new_gs = Gamestate(
-                        [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] + [wp for wp in
-                                                                                                       self.white_pieces
-                                                                                                       if
-                                                                                                       wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_left += 1
                         while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
                             if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
                                 break
@@ -486,7 +433,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_bottom_left += 1
 
                 else:
@@ -501,14 +449,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_bottom_left = 1
 
                     # UP
-                    new_gs = Gamestate(
-                        [Queen((piece.i - index_up, piece.j), WHITE)] + [wp for wp in self.white_pieces if
-                                                                              wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, BLACK) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_up += 1
                         while piece.i - index_up >= 0:
                             if self.get_piece(piece.i - index_up, piece.j):
                                 break
@@ -517,18 +459,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                     [Queen((piece.i - index_up, piece.j), WHITE)] + [wp for wp in self.white_pieces
                                                                                           if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_up += 1
 
                     # DOWN
-                    new_gs = Gamestate(
-                        [Queen((piece.i + index_down, piece.j), WHITE)] + [wp for wp in self.white_pieces if
-                                                                                wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, BLACK) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_down += 1
                         while piece.i + index_down < 8:
                             if self.get_piece(piece.i + index_down, piece.j):
                                 break
@@ -538,18 +475,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.white_pieces
                                                                                             if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_down += 1
 
                     # LEFT
-                    new_gs = Gamestate(
-                        [Queen((piece.i, piece.j - index_left), WHITE)] + [wp for wp in self.white_pieces if
-                                                                                wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, BLACK) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_left += 1
                         while piece.j - index_left >= 0:
                             if self.get_piece(piece.i, piece.j - index_left):
                                 break
@@ -559,18 +491,15 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.white_pieces
                                                                                             if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_left += 1
 
                     # RIGHT
-                    new_gs = Gamestate(
-                        [Queen((piece.i, piece.j + index_right), WHITE)] + [wp for wp in self.white_pieces if
-                                                                                 wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, BLACK) is None:
+
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_right += 1
+
                         while piece.j + index_right < 8:
                             if self.get_piece(piece.i, piece.j + index_right):
                                 break
@@ -580,21 +509,14 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                              self.white_pieces
                                                                                              if wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_right += 1
 
                     # BOTTOM RIGHT
-                    new_gs = Gamestate(
-                        [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), WHITE)] + [wp for wp in
-                                                                                                         self.white_pieces
-                                                                                                         if
-                                                                                                         wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
-                                                                piece.j + index_bottom_right) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_right += 1
+
                         while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
                             if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
                                 break
@@ -608,21 +530,14 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                                                      if
                                                                                                                      wp != piece],
                                     self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_bottom_right += 1
 
                     # TOP RIGHT
-                    new_gs = Gamestate(
-                        [Queen((piece.i - index_top_right, piece.j + index_top_right), WHITE)] + [wp for wp in
-                                                                                                   self.white_pieces
-                                                                                                   if
-                                                                                                   wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
-                                                                piece.j + index_top_right) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
+
                         while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
                             if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
                                 break
@@ -630,21 +545,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Queen((piece.i - index_top_right, piece.j + index_top_right), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_top_right += 1
 
                     # TOP LEFT
-                    new_gs = Gamestate(
-                        [Queen((piece.i - index_top_left, piece.j - index_top_left), WHITE)] + [wp for wp in
-                                                                                                 self.white_pieces
-                                                                                                 if
-                                                                                                 wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
-                                                                piece.j - index_top_left) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_left += 1
+
+                    if True:
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break
@@ -652,21 +559,14 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Queen((piece.i - index_top_left, piece.j - index_top_left), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_top_left += 1
 
                     # BOTTOM LEFT
-                    new_gs = Gamestate(
-                        [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] + [wp for wp in
-                                                                                                       self.white_pieces
-                                                                                                       if
-                                                                                                       wp != piece],
-                        self.black_pieces, self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
-                                                                piece.j - index_bottom_left) is None:
+
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_left += 1
                         while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
                             if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
                                 break
@@ -674,7 +574,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(
                                     [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), WHITE)] +
                                     [wp for wp in self.white_pieces if wp != piece], self.black_pieces, self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(WHITE):
+                                    output.append(new_gs)
                                 index_bottom_left += 1
             return self.generate_captures(WHITE) + output
 
@@ -686,16 +587,11 @@ will be ordered by captures, forward moves and ending with backwards moves
                         if self.is_legal(new_gs) and self.get_piece(new_king.i, new_king.j, WHITE) is None:
                             output.append(new_gs)
                 elif piece.value == KNIGHT:
-                    new_knights = piece.generate_possible_moves()
-                    test_gs_to_see_if_pinned = Gamestate(self.white_pieces,
-                        [new_knights[0]] + [bp for bp in self.black_pieces if bp != piece],
-                        self.move + 1)
-                    if self.is_legal(test_gs_to_see_if_pinned) and self.get_piece(new_knights[0].i, new_knights[0].j,
-                                                                                  WHITE) is None:
-                        output.append(test_gs_to_see_if_pinned)
-                        output += [Gamestate(self.white_pieces, [new_knights[n]] + [bp for bp in self.black_pieces if bp != piece]
-                                             , self.move + 1) for n in range(1, len(new_knights)) if
-                                   self.get_piece(new_knights[n].i, new_knights[n].j) is None]
+                    for temp_knight in piece.generate_possible_moves():
+                        temp_gs = Gamestate(self.white_pieces, [temp_knight] + [bp for bp in self.black_pieces if bp != piece]
+                                             , self.move + 1)
+                        if self.is_legal(temp_gs) and self.get_piece(temp_knight.i, temp_knight.j, WHITE) is None:
+                            output.append(temp_gs)
                 elif piece.value == PAWN:
                     new_pawn = Pawn((piece.i + 1, piece.j), BLACK, False)
                     new_gs = Gamestate(self.white_pieces, [new_pawn] + [bp for bp in self.black_pieces if bp != piece], self.move + 1)
@@ -714,14 +610,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_down = 1
 
                     # UP
-                    new_gs = Gamestate(self.white_pieces,
-                        [Rook((piece.i - index_up, piece.j), BLACK, True)] + [bp for bp in self.black_pieces if
-                                                                              bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, WHITE) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_up += 1
                         while piece.i - index_up >= 0:
                             if self.get_piece(piece.i - index_up, piece.j):
                                 break
@@ -738,18 +628,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                     [Rook((piece.i - index_up, piece.j), BLACK, True)] + [bp for bp in self.black_pieces
                                                                                           if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_up += 1
 
                     # DOWN
-                    new_gs = Gamestate(self.white_pieces,
-                        [Rook((piece.i + index_down, piece.j), BLACK, True)] + [bp for bp in self.black_pieces if
-                                                                                bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, WHITE) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_down += 1
                         while piece.i + index_down < 8:
                             if self.get_piece(piece.i + index_down, piece.j):
                                 break
@@ -759,18 +644,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.black_pieces
                                                                                             if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_down += 1
 
                     # LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Rook((piece.i, piece.j - index_left), BLACK, True)] + [bp for bp in self.black_pieces if
-                                                                                bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, WHITE) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_left += 1
                         while piece.j - index_left >= 0:
                             if self.get_piece(piece.i, piece.j - index_left):
                                 break
@@ -780,18 +660,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                             self.black_pieces
                                                                                             if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_left += 1
 
                     # RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Rook((piece.i, piece.j + index_right), BLACK, True)] + [bp for bp in self.black_pieces if
-                                                                                 bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, WHITE) is None:
+                    if True:
                         # ROOK IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_right += 1
                         while piece.j + index_right < 8:
                             if self.get_piece(piece.i, piece.j + index_right):
                                 break
@@ -801,7 +676,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                              self.black_pieces
                                                                                              if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_right += 1
 
                 elif piece.value == BISHOP:
@@ -811,17 +687,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_bottom_left = 1
 
                     # BOTTOM RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Bishop((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp for bp in
-                                                                                                         self.black_pieces
-                                                                                                         if
-                                                                                                         bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
-                                                                piece.j + index_bottom_right, WHITE) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_right += 1
                         while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
                             if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
                                 break
@@ -835,21 +702,15 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                                                      if
                                                                                                                      bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_bottom_right += 1
 
                     # TOP RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Bishop((piece.i - index_top_right, piece.j + index_top_right), BLACK)] + [bp for bp in
-                                                                                                   self.black_pieces
-                                                                                                   if
-                                                                                                   bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
-                                                                piece.j + index_top_right, WHITE) is None:
+
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
+
                         while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
                             if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
                                 break
@@ -857,21 +718,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Bishop((piece.i - index_top_right, piece.j + index_top_right), BLACK)] +
                                     [bp for bp in self.black_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_top_right += 1
 
                     # TOP LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Bishop((piece.i - index_top_left, piece.j - index_top_left), BLACK)] + [bp for bp in
-                                                                                                 self.black_pieces
-                                                                                                 if
-                                                                                                 bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
-                                                                piece.j - index_top_left, WHITE) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break
@@ -879,21 +732,13 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Bishop((piece.i - index_top_left, piece.j - index_top_left), BLACK)] +
                                     [bp for bp in self.black_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_top_left += 1
 
                     # BOTTOM LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] + [bp for bp in
-                                                                                                       self.black_pieces
-                                                                                                       if
-                                                                                                       bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
-                                                                piece.j - index_bottom_left, WHITE) is None:
+                    if True:
                         # BISHOP IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_left += 1
                         while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
                             if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
                                 break
@@ -901,7 +746,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Bishop((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] +
                                     [bp for bp in self.black_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_bottom_left += 1
 
                 else:
@@ -916,14 +762,9 @@ will be ordered by captures, forward moves and ending with backwards moves
                     index_bottom_left = 1
 
                     # UP
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i - index_up, piece.j), BLACK)] + [bp for bp in self.black_pieces if
-                                                                         bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_up, piece.j, WHITE) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_up += 1
+
                         while piece.i - index_up >= 0:
                             if self.get_piece(piece.i - index_up, piece.j):
                                 break
@@ -932,18 +773,14 @@ will be ordered by captures, forward moves and ending with backwards moves
                                     [Queen((piece.i - index_up, piece.j), BLACK)] + [bp for bp in self.black_pieces
                                                                                      if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_up += 1
 
                     # DOWN
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i + index_down, piece.j), BLACK)] + [bp for bp in self.black_pieces if
-                                                                           bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_down, piece.j, WHITE) is None:
+                    if True:
                         # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_down += 1
+
                         while piece.i + index_down < 8:
                             if self.get_piece(piece.i + index_down, piece.j):
                                 break
@@ -953,18 +790,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                        self.black_pieces
                                                                                        if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_down += 1
 
                     # LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i, piece.j - index_left), BLACK)] + [bp for bp in self.black_pieces if
-                                                                           bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j - index_left, WHITE) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_left += 1
+                    if True:
                         while piece.j - index_left >= 0:
                             if self.get_piece(piece.i, piece.j - index_left):
                                 break
@@ -974,18 +805,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                        self.black_pieces
                                                                                        if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_left += 1
 
                     # RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i, piece.j + index_right), BLACK)] + [bp for bp in self.black_pieces if
-                                                                            bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i, piece.j + index_right, WHITE) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_right += 1
+                    if True:
                         while piece.j + index_right < 8:
                             if self.get_piece(piece.i, piece.j + index_right):
                                 break
@@ -995,21 +820,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                         self.black_pieces
                                                                                         if bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_right += 1
 
                     # BOTTOM RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i + index_bottom_right, piece.j + index_bottom_right), BLACK)] + [bp for bp in
-                                                                                                        self.black_pieces
-                                                                                                        if
-                                                                                                        bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_right,
-                                                                piece.j + index_bottom_right) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_right += 1
+                    if True:
                         while piece.i + index_bottom_right < 8 and piece.j + index_bottom_right < 8:
                             if self.get_piece(piece.i + index_bottom_right, piece.j + index_bottom_right):
                                 break
@@ -1023,21 +839,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                                                                                                     if
                                                                                                                     bp != piece],
                                     self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_bottom_right += 1
 
                     # TOP RIGHT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i - index_top_right, piece.j + index_top_right), BLACK)] + [bp for bp in
-                                                                                                  self.black_pieces
-                                                                                                  if
-                                                                                                  bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_right,
-                                                                piece.j + index_top_right) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
+                    if True:
                         while piece.i - index_top_right >= 0 and piece.j + index_top_right < 8:
                             if self.get_piece(piece.i - index_top_right, piece.j + index_top_right):
                                 break
@@ -1045,21 +852,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Queen((piece.i - index_top_right, piece.j + index_top_right), BLACK)] +
                                     [bp for bp in self.black_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_top_right += 1
 
                     # TOP LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i - index_top_left, piece.j - index_top_left), BLACK)] + [bp for bp in
-                                                                                                self.black_pieces
-                                                                                                if
-                                                                                                bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i - index_top_left,
-                                                                piece.j - index_top_left) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_top_right += 1
+                    if True:
                         while piece.i - index_top_left >= 0 and piece.j - index_top_left >= 0:
                             if self.get_piece(piece.i - index_top_left, piece.j - index_top_left):
                                 break
@@ -1067,21 +865,12 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Queen((piece.i - index_top_left, piece.j - index_top_left), BLACK)] +
                                     [bp for bp in self.white_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_top_left += 1
 
                     # BOTTOM LEFT
-                    new_gs = Gamestate(self.white_pieces,
-                        [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] + [bp for bp in
-                                                                                                      self.black_pieces
-                                                                                                      if
-                                                                                                      bp != piece],
-                        self.move + 1)
-                    if self.is_legal(new_gs) and self.get_piece(piece.i + index_bottom_left,
-                                                                piece.j - index_bottom_left) is None:
-                        # QUEEN IS NOT PINNED IN THIS DIRECTION
-                        output.append(new_gs)
-                        index_bottom_left += 1
+                    if True:
                         while piece.i + index_bottom_left < 8 and piece.j - index_bottom_left >= 0:
                             if self.get_piece(piece.i + index_bottom_left, piece.j - index_bottom_left):
                                 break
@@ -1089,7 +878,8 @@ will be ordered by captures, forward moves and ending with backwards moves
                                 new_gs = Gamestate(self.white_pieces,
                                     [Queen((piece.i + index_bottom_left, piece.j - index_bottom_left), BLACK)] +
                                     [bp for bp in self.black_pieces if bp != piece], self.move + 1)
-                                output.append(new_gs)
+                                if not new_gs.king_under_attack(BLACK):
+                                    output.append(new_gs)
                                 index_bottom_left += 1
             return self.generate_captures(BLACK) + output
 
@@ -1280,16 +1070,22 @@ Checks if it is legal to go from this Gamestate to the given gamestate. Assumes 
         for piece in self.white_pieces:
             if piece not in new_board.white_pieces:
                 moved_piece_old = piece
-        for piece in self.black_pieces:
-            if piece not in new_board.black_pieces:
-                moved_piece_old = piece
+                break
+        if moved_piece_old is None:
+            for piece in self.black_pieces:
+                if piece not in new_board.black_pieces:
+                    moved_piece_old = piece
+                    break
 
         for piece in new_board.white_pieces:
             if piece not in self.white_pieces:
                 moved_piece_new = piece
-        for piece in new_board.black_pieces:
-            if piece not in self.black_pieces:
-                moved_piece_new = piece
+                break
+        if moved_piece_new is None:
+            for piece in new_board.black_pieces:
+                if piece not in self.black_pieces:
+                    moved_piece_new = piece
+                    break
 
         # Check if nothing has moved
         if moved_piece_old is None or moved_piece_new is None:
