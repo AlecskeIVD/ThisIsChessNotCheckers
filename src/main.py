@@ -3,7 +3,6 @@ from assets.constants import *
 from src.Openings.openingtree import Tree
 from src.gamestate import Gamestate
 from time import sleep, time
-
 # INITIALISING WINDOW
 from src.pieces.bishop import Bishop
 from src.pieces.king import King
