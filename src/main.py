@@ -107,7 +107,6 @@ def main(version: int = 0):
                         run = False
                         print("The game has ended in a draw")
                         sleep(3)
-
     pg.quit()
 
 

@@ -13,7 +13,7 @@ def load_moves_up_to_nth_changed(path, up_to_move):
             moves = game.split(" ")
             # Extract moves up to the specified move count
             move_count = min(up_to_move * 2, len(moves))
-            all_games_moves.append(moves[:move_count])
+            all_games_moves.append([moves[turn].replace("+", "") for turn in range(move_count)])
 
         return all_games_moves
 
@@ -22,7 +22,7 @@ class Tree:
     def __init__(self):
         self.root = Node("")
         path = '/Users/alecvandeuren/ThisIsChessNotCheckers/assets/GM_games/Games.txt'
-        games = load_moves_up_to_nth_changed(path, 7)
+        games = load_moves_up_to_nth_changed(path, 10)
         for game in games:
             node = self.root
             for move in game:
@@ -32,7 +32,7 @@ class Tree:
         path = '/Users/alecvandeuren/ThisIsChessNotCheckers/assets/GM_games/WijkaanZee'
         for year in range(2006, 2021):
             temp_path = path + str(year) + '.txt'
-            games = load_moves_up_to_nth(temp_path, 7)
+            games = load_moves_up_to_nth(temp_path, 10)
             for game in games:
                 node = self.root
                 for move in game:

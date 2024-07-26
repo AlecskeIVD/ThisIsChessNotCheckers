@@ -1,5 +1,14 @@
+from time import sleep
+
+from assets.constants import *
 from src.Openings.openingtree import Tree
 from src.gamestate import Gamestate
+from src.pieces.bishop import Bishop
+from src.pieces.king import King
+from src.pieces.knight import Knight
+from src.pieces.pawn import Pawn
+from src.pieces.queen import Queen
+from src.pieces.rook import Rook
 
 
 def main():

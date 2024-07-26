@@ -1880,7 +1880,7 @@ Updates 'self' to new gamestate where computer made move, based on 'version'
             else:
                 self.alpha_beta_best(4)
         elif version == 7:
-            if self.move <= 12:
+            if self.move <= 20:
                 move_str = self.opening_move(tree)
                 if move_str is None:
                     self.iterative_deepening_better()
@@ -2508,7 +2508,7 @@ A heuristic function to make a guess on evaluation of current position without r
             else:
                 # BLACK'S TURN
                 _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves)
-            depth += 2
+            depth += 1
         if ordered_moves:
             self.update(ordered_moves[0][1])
         else:
