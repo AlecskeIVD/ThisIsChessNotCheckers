@@ -32,22 +32,22 @@ def king_pawn_shield(white_pawn_positions, white_king, black_pawn_positions, bla
     output = 0
     # Check safety of white king
     if white_king.i == 7:
-        kingSafetyValueWhite = 90
+        kingSafetyValueWhite = 30
     if white_king.i - 1 in white_pawn_positions.get(white_king.j, []):
-        kingSafetyValueWhite += 40
+        kingSafetyValueWhite += 8
     if white_king.i - 1 in white_pawn_positions.get(white_king.j - 1, []):
-        kingSafetyValueWhite += 30
+        kingSafetyValueWhite += 4
     if white_king.i - 1 in white_pawn_positions.get(white_king.j + 1, []):
-        kingSafetyValueWhite += 30
+        kingSafetyValueWhite += 4
     output += kingSafetyValueWhite * weights[white_king.j]
     if black_king.i == 0:
-        kingSafetyValueBlack = 90
+        kingSafetyValueBlack = 30
     if black_king.i + 1 in black_pawn_positions.get(black_king.j, []):
-        kingSafetyValueBlack += 40
+        kingSafetyValueBlack += 8
     if black_king.i + 1 in black_pawn_positions.get(black_king.j - 1, []):
-        kingSafetyValueBlack += 30
+        kingSafetyValueBlack += 4
     if black_king.i + 1 in black_pawn_positions.get(black_king.j + 1, []):
-        kingSafetyValueBlack += 30
+        kingSafetyValueBlack += 4
     return output - kingSafetyValueBlack * weights[black_king.j]
 
 
@@ -2165,14 +2165,14 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
 
         KnightValue = 300
         KnightValues = [
-            [280, 285, 290, 290, 290, 290, 285, 280],
-            [280, 285, 290, 290, 290, 290, 285, 280],
-            [280, 295, 300, 300, 300, 300, 295, 280],
-            [300, 300, 300, 300, 300, 300, 300, 300],
-            [300, 300, 300, 300, 300, 300, 300, 300],
-            [280, 295, 300, 300, 300, 300, 295, 280],
-            [280, 285, 290, 290, 290, 290, 285, 280],
-            [280, 285, 290, 290, 290, 290, 285, 280]
+            [280, 290, 290, 290, 290, 290, 290, 280],
+            [290, 295, 295, 295, 295, 295, 295, 290],
+            [290, 295, 300, 300, 300, 300, 295, 290],
+            [290, 295, 300, 300, 300, 300, 295, 290],
+            [290, 295, 300, 300, 300, 300, 295, 290],
+            [290, 295, 300, 300, 300, 300, 295, 290],
+            [290, 295, 295, 295, 295, 295, 295, 290],
+            [280, 290, 290, 290, 290, 290, 290, 280]
         ]
         BishopValue = 310
         RookValue = 500
@@ -2231,12 +2231,12 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         endgameWeight = 1 - min(1.0, opponentMaterialCountWithoutPawns / endgameMaterialStart)
         output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
         for bishop in white_bishops:
-            if (bishop.i == bishop.j or bishop.i == 7 - bishop.j) and (bishop.j <= 1 or bishop.j <= 6):
+            if (bishop.i == 6 and bishop.j == 1) or (bishop.i == 6 and 6 == bishop.j) or (bishop.i == 3 and bishop.j == 1) or (bishop.i == 3 and bishop.j == 6):
                 output += BishopValue + 45
             else:
                 output += BishopValue
         for bishop in black_bishops:
-            if bishop.i == bishop.j or bishop.i == 7 - bishop.j:
+            if (bishop.i == 1 and bishop.j == 1) or (bishop.i == 1 and 6 == bishop.j) or (bishop.i == 4 and bishop.j == 6) or (bishop.i == 4 and bishop.j == 1):
                 output = output - (BishopValue + 45)
             else:
                 output -= BishopValue
@@ -2512,17 +2512,17 @@ A heuristic function to make a guess on evaluation of current position without r
             print(f'Performing iterative deepening with depth {depth}')
             if self.move % 2 == 1:
                 # WHITE'S TURN
-                _, ordered_moves = self.alpha_beta_max_all_better(depth, float('-inf'), float('inf'), ordered_moves)
+                _, ordered_moves = self.alpha_beta_max_all_better(depth, float('-inf'), float('inf'), ordered_moves, True)
             else:
                 # BLACK'S TURN
-                _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves)
+                _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves, True)
             depth += 2
         if ordered_moves:
             self.update(ordered_moves[0][1])
         else:
             raise Exception
 
-    def alpha_beta_max_all_better(self, depth, alpha, beta, ordered_moves=None):
+    def alpha_beta_max_all_better(self, depth, alpha, beta, ordered_moves=None, sort_moves=False):
         if depth == 0:
             return self.quiescence_search(alpha, beta, True), None
 
@@ -2539,8 +2539,11 @@ A heuristic function to make a guess on evaluation of current position without r
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            if new_gs.stalemate():
-                value2 = 0
+            if new_gs in self.previous_states or self.last_non_drawing_turn + 100 <= self.move:
+                if new_gs.stalemate():
+                    value2 = 0
+                else:
+                    value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
             else:
                 value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
@@ -2548,11 +2551,11 @@ A heuristic function to make a guess on evaluation of current position without r
                 alpha = value2
             if alpha >= beta:
                 break
-
-        move_values.sort(key=lambda x: x[0], reverse=True)
+        if sort_moves:
+            move_values.sort(key=lambda x: x[0], reverse=True)
         return move_values[0][0], move_values
 
-    def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves=None):
+    def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves=None, sort_moves=False):
         if depth == 0:
             return self.quiescence_search(alpha, beta, False), None
 
@@ -2565,13 +2568,15 @@ A heuristic function to make a guess on evaluation of current position without r
                 return float('inf'), None  # Lose due to checkmate
             return 0, None  # Draw
 
-
         move_values = []
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            if new_gs.stalemate():
-                value2 = 0
+            if new_gs in self.previous_states or self.last_non_drawing_turn + 100 <= self.move:
+                if new_gs.stalemate():
+                    value2 = 0
+                else:
+                    value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
             else:
                 value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
@@ -2580,7 +2585,8 @@ A heuristic function to make a guess on evaluation of current position without r
             if beta <= alpha:
                 break
 
-        move_values.sort(key=lambda x: x[0])
+        if sort_moves:
+            move_values.sort(key=lambda x: x[0])
         return move_values[0][0], move_values
 
     def deep_copy_without_previous_states(self):
