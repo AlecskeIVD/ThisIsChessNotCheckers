@@ -2145,14 +2145,18 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
 
         return alpha if is_maximizing else beta
 
-    # Ensure the following methods are defined elsewhere in your class:
-    # - self.move
-    # - self.evaluate()
-    # - self.legal_moves(color=None, sort_by_heuristic=False, captures_only=False)
-    # - self.king_under_attack(color)
-    # - self.deep_copy()
-    # - self.update(move, trust_me, update_string)
-    # - self.maximize_value()
+    def quiescence_search_alt(self, is_maximising: bool):
+        """ONLY FOR TESTING"""
+        best_value = self.evaluate_better()
+        for move in self.generate_captures(WHITE if is_maximising else BLACK):
+            new_gs = self.deep_copy()
+            new_gs.update(move, trust_me=True, update_string=False)
+            val2 = new_gs.quiescence_search_alt(not is_maximising)
+            if is_maximising and val2 > best_value:
+                best_value = val2
+            elif not is_maximising and val2 < best_value:
+                best_value = val2
+        return best_value
 
     def evaluate_better(self):
         black_king = None
