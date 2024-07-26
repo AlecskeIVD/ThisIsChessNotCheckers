@@ -887,16 +887,24 @@ Checks if the king of team 'colour' is in check
         :return: True or False
         """
         king = None
-        for piece in self.white_pieces:
-            if piece.colour == colour and piece.value == KING:
-                king = piece
-                break
-        if king is None:
+        if colour == WHITE:
+            for piece in self.white_pieces:
+                if piece.value == KING:
+                    king = piece
+                    break
+        else:
             for piece in self.black_pieces:
-                if piece.colour == colour and piece.value == KING:
+                if piece.value == KING:
                     king = piece
                     break
         if king is None:
+            print("Oh no there was no king!!!")
+            for piece in self.white_pieces:
+                print(piece, end=" ")
+            print("")
+            for piece in self.black_pieces:
+                print(piece, end=" ")
+            print("")
             raise Exception
         # Check if a rook or queen can attack king from horizontal line
         blocking_piece_found = False
@@ -2508,7 +2516,7 @@ A heuristic function to make a guess on evaluation of current position without r
             else:
                 # BLACK'S TURN
                 _, ordered_moves = self.alpha_beta_min_all_better(depth, float('-inf'), float('inf'), ordered_moves)
-            depth += 1
+            depth += 2
         if ordered_moves:
             self.update(ordered_moves[0][1])
         else:
@@ -2519,7 +2527,7 @@ A heuristic function to make a guess on evaluation of current position without r
             return self.quiescence_search(alpha, beta, True), None
 
         if ordered_moves is None:
-            moves = list(self.legal_moves(WHITE, sort_by_heuristic=True))
+            moves = self.legal_moves_faster(WHITE)
         else:
             moves = [move[1] for move in ordered_moves]
         if len(moves) == 0:
@@ -2531,7 +2539,10 @@ A heuristic function to make a guess on evaluation of current position without r
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
+            if new_gs.stalemate():
+                value2 = 0
+            else:
+                value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
             if value2 > alpha:
                 alpha = value2
@@ -2546,7 +2557,7 @@ A heuristic function to make a guess on evaluation of current position without r
             return self.quiescence_search(alpha, beta, False), None
 
         if ordered_moves is None:
-            moves = list(self.legal_moves(BLACK, sort_by_heuristic=True))
+            moves = self.legal_moves_faster(BLACK)
         else:
             moves = [move[1] for move in ordered_moves]
         if len(moves) == 0:
@@ -2554,11 +2565,15 @@ A heuristic function to make a guess on evaluation of current position without r
                 return float('inf'), None  # Lose due to checkmate
             return 0, None  # Draw
 
+
         move_values = []
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
+            if new_gs.stalemate():
+                value2 = 0
+            else:
+                value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
             if value2 < beta:
                 beta = value2
