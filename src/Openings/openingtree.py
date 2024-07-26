@@ -3,9 +3,31 @@ import re
 from src.Openings.node import Node
 
 
+def load_moves_up_to_nth_changed(path, up_to_move):
+    with open(path, 'r') as file:
+        games = file.readlines()
+        # Split the content by empty lines to separate games
+        all_games_moves = []
+
+        for game in games:
+            moves = game.split(" ")
+            # Extract moves up to the specified move count
+            move_count = min(up_to_move * 2, len(moves))
+            all_games_moves.append(moves[:move_count])
+
+        return all_games_moves
+
+
 class Tree:
     def __init__(self):
         self.root = Node("")
+        path = '/Users/alecvandeuren/ThisIsChessNotCheckers/assets/GM_games/Games.txt'
+        games = load_moves_up_to_nth_changed(path, 7)
+        for game in games:
+            node = self.root
+            for move in game:
+                node.addChild(move)
+                node = node.getChild(move)
 
         path = '/Users/alecvandeuren/ThisIsChessNotCheckers/assets/GM_games/WijkaanZee'
         for year in range(2006, 2021):
@@ -19,7 +41,7 @@ class Tree:
 
     def getNextMoves(self, moves: str) -> None or list[str]:
         """
-        Returns a list of all the next moves played in WijkaanZee following the previous moves
+        Returns a list of all the next moves played in Wijk aan Zee following the previous moves
         :param moves: The moves in order, split by a space, to get next known moves
         """
         node = self.root
