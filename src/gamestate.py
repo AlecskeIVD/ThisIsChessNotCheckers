@@ -2162,10 +2162,25 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         black_king = None
         white_king = None
         output = 0
-        if self.move - self.last_non_drawing_turn >= 100:
+
+        if self.last_non_drawing_turn + 100 <= self.move or self.previous_states.count(self) >= 3:
             return 0
-        if self.previous_states.count(self) >= 3:
-            return 0
+
+        # TOO SLOW
+        #if self.move % 2 == 1:
+        #    kuaw = self.king_under_attack(WHITE)
+        #    if kuaw:
+        #        lmw = self.legal_moves_faster(WHITE)
+        #        if self.move % 2 == 1 and len(lmw) == 0:
+        #            # BLACK WINS
+        #            return float('-inf')
+        #else:
+        #    kuab = self.king_under_attack(BLACK)
+        #    if kuab:
+        #        lmb = self.legal_moves_faster(BLACK)
+        #        if self.move % 2 == 0 and len(lmb) == 0:
+        #            # WHITE WINS
+        #            return float('inf')
 
         KnightValue = 300
         KnightValues = [
@@ -2236,12 +2251,12 @@ Performs a move based on a minmax tree, but in contrast to version 2 uses alpha-
         output += evaluate_pawns(white_pawns, white_pawn_positions, black_pawns, black_pawn_positions)
         for bishop in white_bishops:
             if (bishop.i == 6 and bishop.j == 1) or (bishop.i == 6 and 6 == bishop.j) or (bishop.i == 3 and bishop.j == 1) or (bishop.i == 3 and bishop.j == 6):
-                output += BishopValue + 45
+                output += BishopValue + 25
             else:
                 output += BishopValue
         for bishop in black_bishops:
             if (bishop.i == 1 and bishop.j == 1) or (bishop.i == 1 and 6 == bishop.j) or (bishop.i == 4 and bishop.j == 6) or (bishop.i == 4 and bishop.j == 1):
-                output = output - (BishopValue + 45)
+                output = output - (BishopValue + 25)
             else:
                 output -= BishopValue
         output += (len(white_queens) - len(black_queens)) * QueenValue
@@ -2538,12 +2553,12 @@ A heuristic function to make a guess on evaluation of current position without r
             if self.king_under_attack(WHITE):
                 return float('-inf'), None  # Lose due to checkmate
             return 0, None  # Draw
-
+        return_val = float('-inf')
         move_values = []
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            if new_gs in self.previous_states or self.last_non_drawing_turn + 100 <= self.move:
+            if new_gs in self.previous_states or new_gs.last_non_drawing_turn + 100 <= new_gs.move:
                 if new_gs.stalemate():
                     value2 = 0
                 else:
@@ -2555,9 +2570,11 @@ A heuristic function to make a guess on evaluation of current position without r
                 alpha = value2
             if alpha >= beta:
                 break
+            if value2 > return_val:
+                return_val = value2
         if sort_moves:
             move_values.sort(key=lambda x: x[0], reverse=True)
-        return move_values[0][0], move_values
+        return return_val, move_values
 
     def alpha_beta_min_all_better(self, depth, alpha, beta, ordered_moves=None, sort_moves=False):
         if depth == 0:
@@ -2573,10 +2590,11 @@ A heuristic function to make a guess on evaluation of current position without r
             return 0, None  # Draw
 
         move_values = []
+        return_val = float('inf')
         for turn in moves:
             new_gs = self.deep_copy()
             new_gs.update(turn, trust_me=True, update_string=False)
-            if new_gs in self.previous_states or self.last_non_drawing_turn + 100 <= self.move:
+            if new_gs in self.previous_states or new_gs.last_non_drawing_turn + 100 <= new_gs.move:
                 if new_gs.stalemate():
                     value2 = 0
                 else:
@@ -2588,10 +2606,11 @@ A heuristic function to make a guess on evaluation of current position without r
                 beta = value2
             if beta <= alpha:
                 break
-
+            if value2 < return_val:
+                return_val = value2
         if sort_moves:
             move_values.sort(key=lambda x: x[0])
-        return move_values[0][0], move_values
+        return return_val, move_values
 
     def deep_copy_without_previous_states(self):
         new_white_pieces = []

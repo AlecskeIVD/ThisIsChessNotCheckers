@@ -25,8 +25,9 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate(load_images=True)
+    gs = Gamestate(move = 31, load_images=True)
     openingTree = Tree()
+    gs.computer_makes_move(7, openingTree)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
@@ -96,10 +97,12 @@ def main(version: int = 0):
                     pg.display.update()
                     selected_piece = None
                     if gs.white_wins():
+                        print(len(gs.legal_moves_faster(BLACK)))
                         run = False
                         print("White has won!")
                         sleep(3)
                     elif gs.black_wins():
+                        print(len(gs.legal_moves_faster(WHITE)))
                         run = False
                         print("Black has won")
                         sleep(3)

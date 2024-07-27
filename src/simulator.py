@@ -19,7 +19,7 @@ def main():
     black_wins = 0
     draws = 0
     openingTree = Tree()
-    for i in range(1,n+1):
+    for i in range(1, n+1):
         print(f"Game {i}: White has won {white_wins} games, black has won {black_wins} games and there have been {draws} draws.")
         gs = Gamestate()
         game_is_over = False
