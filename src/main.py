@@ -25,13 +25,23 @@ for row in range(8):
 def main(version: int = 0):
     run = True
     clock = pg.time.Clock()
-    gs = Gamestate(move = 31, load_images=True)
+    white_pieces = [Rook(BP_WLROOK, WHITE), Rook(BP_WRROOK, WHITE), Knight(BP_WLKNIGHT, WHITE),
+                    Bishop(BP_WRBISHOP, WHITE), Bishop((5, 7), WHITE),
+                    Queen(BP_WQUEEN, WHITE), King(BP_WKING, WHITE)]
+    for i in range(COLUMNS):
+        if i != 3 and i != 5:
+            white_pieces.append(Pawn((ROWS - 2, i), WHITE))
+    black_pieces = [Rook(BP_BLROOK, BLACK), Rook(BP_BRROOK, BLACK),
+                    Knight((5, 4), BLACK), Bishop(BP_BLBISHOP, BLACK), Bishop(BP_BRBISHOP, BLACK),
+                    Queen(BP_BQUEEN, BLACK), King(BP_BKING, BLACK)]
+    for i in range(COLUMNS-2):
+        black_pieces.append(Pawn((1, i), BLACK))
+    gs = Gamestate(white_pieces, black_pieces,move=31, load_images=True)
     openingTree = Tree()
     gs.computer_makes_move(7, openingTree)
     selected_piece = None
     gs.draw_board(WINDOW)
     pg.display.update()
-
     while run:
         clock.tick(FPS)
         for event in pg.event.get():
