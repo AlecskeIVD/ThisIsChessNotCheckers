@@ -2549,6 +2549,8 @@ A heuristic function to make a guess on evaluation of current position without r
             moves = self.legal_moves_faster(WHITE)
         else:
             moves = [move[1] for move in ordered_moves]
+            gen_moves = self.legal_moves_faster(WHITE)
+            moves = moves + [move for move in gen_moves if move not in moves]
         if len(moves) == 0:
             if self.king_under_attack(WHITE):
                 return float('-inf'), None  # Lose due to checkmate
@@ -2566,12 +2568,12 @@ A heuristic function to make a guess on evaluation of current position without r
             else:
                 value2, _ = new_gs.alpha_beta_min_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
+            if value2 > return_val:
+                return_val = value2
             if value2 > alpha:
                 alpha = value2
             if alpha >= beta:
                 break
-            if value2 > return_val:
-                return_val = value2
         if sort_moves:
             move_values.sort(key=lambda x: x[0], reverse=True)
         return return_val, move_values
@@ -2581,9 +2583,11 @@ A heuristic function to make a guess on evaluation of current position without r
             return self.quiescence_search(alpha, beta, False), None
 
         if ordered_moves is None:
-            moves = self.legal_moves_faster(BLACK)
+            moves = self.legal_moves(BLACK)
         else:
             moves = [move[1] for move in ordered_moves]
+            gen_moves = self.legal_moves_faster(BLACK)
+            moves = moves + [move for move in gen_moves if move not in moves]
         if len(moves) == 0:
             if self.king_under_attack(BLACK):
                 return float('inf'), None  # Lose due to checkmate
@@ -2602,12 +2606,12 @@ A heuristic function to make a guess on evaluation of current position without r
             else:
                 value2, _ = new_gs.alpha_beta_max_all_better(depth - 1, alpha, beta)
             move_values.append((value2, turn))
+            if value2 < return_val:
+                return_val = value2
             if value2 < beta:
                 beta = value2
             if beta <= alpha:
                 break
-            if value2 < return_val:
-                return_val = value2
         if sort_moves:
             move_values.sort(key=lambda x: x[0])
         return return_val, move_values
